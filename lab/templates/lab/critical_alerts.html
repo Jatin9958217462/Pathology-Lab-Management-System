@@ -1,0 +1,60 @@
+{% extends 'lab/base.html' %}
+{% block title %}Critical Alerts — IPL{% endblock %}
+{% block page_title %}Critical Alerts{% endblock %}
+{% block content %}
+<div class="wbanner" style="border-color:rgba(248,81,73,.3);background:linear-gradient(135deg,#1a0a0a,#1f0f0f,var(--bg3))">
+  <div><div class="wb-title" style="color:var(--red)">🚨 Critical Value Alerts</div><div class="wb-sub">Critically abnormal results — notify the doctor immediately</div></div>
+</div>
+{% if alerts %}
+<div style="background:var(--red-l);border:1px solid rgba(248,81,73,.3);border-radius:var(--r2);padding:10px 14px;margin-bottom:12px">
+  <strong style="color:var(--red)">⚠️ {{ alerts|length }} pending critical alert(s)</strong> — Doctor notification is mandatory.
+</div>
+{% endif %}
+<div class="card">
+  <div class="tw"><table>
+    <thead><tr><th>Time</th><th>Patient</th><th>Report</th><th>Parameter</th><th>Value</th><th>Normal Range</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for alert in alerts %}
+      <tr style="background:rgba(248,81,73,.04)">
+        <td style="font-size:11px;white-space:nowrap">{{ alert.created_at|date:"d M H:i" }}</td>
+        <td><strong>{{ alert.report.booking.patient.full_name }}</strong><br><span style="font-size:10px;color:var(--txt3)">{{ alert.report.booking.patient.mobile }}</span></td>
+        <td><a href="{% url 'report_view' alert.report.pk %}" style="color:var(--blue)" class="mono">{{ alert.report.report_id }}</a></td>
+        <td style="font-weight:600;color:var(--red)">{{ alert.parameter }}</td>
+        <td style="font-family:var(--mono);font-weight:700;color:var(--red)">{{ alert.value }}</td>
+        <td style="font-size:11px;color:var(--txt2)">{{ alert.normal_range|default:"—" }}</td>
+        <td><span class="badge" style="background:var(--red-l);color:var(--red)">⚠️ Pending</span></td>
+        <td>
+          <button class="btn btn-sm btn-success" onclick="openNotify({{ alert.pk }})">Mark Notified</button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;padding:48px;color:var(--txt3)">
+        <div style="font-size:32px;margin-bottom:8px">✅</div>
+        <div style="color:var(--green);font-weight:600">No pending critical alerts</div>
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+<div class="mover" id="modal-notify">
+  <div class="mbox" style="width:380px">
+    <div class="mhd"><div class="mtitle">📞 Mark as Notified</div><button class="mclose" onclick="closeModal('modal-notify')">×</button></div>
+    <form method="post" id="notify-form" action="">{% csrf_token %}
+      <div class="mbody">
+        <div class="fg"><label class="fl">Notified To <span class="req">*</span></label><input class="fc" name="notified_to" placeholder="Doctor/Nurse name" required></div>
+        <div class="fg"><label class="fl">Via</label><select class="fc" name="notified_via"><option>Phone</option><option>WhatsApp</option><option>In-person</option><option>SMS</option></select></div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-notify')">Cancel</button><button type="submit" class="btn btn-success">✓ Confirm Notification</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mover').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+function openNotify(pk){
+  document.getElementById('notify-form').action = '/critical-alerts/' + pk + '/resolve/';
+  openModal('modal-notify');
+}
+</script>{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'lab/base.html' %}
+{% block title %}All Reports — Indian Path-Lab{% endblock %}
+{% block page_title %}All Reports{% endblock %}
+{% block extra_head %}
+<style>
+@media(max-width:640px){
+  .topbar form{display:none!important;}
+  .rpt-search-mobile{display:flex;gap:6px;margin-bottom:10px;}
+  .rpt-search-mobile .sbox{flex:1;}
+  .rpt-search-mobile .sbox input{width:100%;}
+  .bulk-actions{flex-wrap:wrap;}
+}
+@media(min-width:641px){.rpt-search-mobile{display:none;}}
+</style>
+{% endblock %}
+{% block topbar_actions %}
+<form method="get" style="display:flex;gap:7px;align-items:center">
+  <div class="sbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" name="q" value="{{ q }}" placeholder="Patient / Report ID / Test..."></div>
+  <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+</form>
+{% endblock %}
+{% block content %}
+<form method="get" class="rpt-search-mobile no-print">
+  <div class="sbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" name="q" value="{{ q }}" placeholder="Search reports..."></div>
+  <button type="submit" class="btn btn-secondary btn-sm">Go</button>
+</form>
+<div class="card">
+  <div class="card-hd">
+    <div><div class="card-title">Lab Reports</div><div class="card-sub">{{ reports|length }} report(s)</div></div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button class="btn btn-blue btn-sm no-print" onclick="bulkPDF()">📄 Selected PDF</button>
+      <button class="btn btn-secondary btn-sm no-print" onclick="bulkPrint()">🖨 Selected Print</button>
+    </div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="accent-color:var(--teal)"></th><th>Report ID</th><th>Patient</th><th>Test</th><th>Sample Date</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for rpt in reports %}
+    <tr>
+      <td><input type="checkbox" class="rpt-chk" value="{{ rpt.pk }}" style="accent-color:var(--teal)"></td>
+        <td><span class="mono">{{ rpt.report_id }}</span></td>
+      <td><strong style="color:var(--txt)">{{ rpt.booking.patient.full_name }}</strong><br><span style="font-size:10px;color:var(--txt3)">{{ rpt.booking.patient.patient_id }}</span></td>
+      <td style="font-size:12px">{{ rpt.test.name }}</td>
+      <td style="font-size:11px;color:var(--txt3)">{{ rpt.booking.sample_date|date:"d M Y" }}</td>
+      <td>{% if rpt.is_finalized %}<span class="badge b-green">Finalized</span>{% else %}<span class="badge b-yellow">Pending</span>{% endif %}</td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          {% if user_role == 'admin' or user_role == 'staff' %}
+          <a href="{% url 'report_entry' rpt.pk %}" class="btn btn-yellow btn-xs">✏ Enter</a>
+          {% endif %}
+          <a href="{% url 'report_view' rpt.pk %}" class="btn btn-secondary btn-xs">View</a>
+          <a href="{% url 'report_pdf' rpt.pk %}" target="_blank" class="btn btn-blue btn-xs">PDF</a>
+          <a href="{% url 'report_print' rpt.pk %}" target="_blank" class="btn btn-secondary btn-xs">Print</a>
+          {% if user_role == 'admin' %}
+          <form method="post" action="{% url 'report_delete' rpt.pk %}" style="display:inline" onsubmit="return confirm('Delete report?')">{% csrf_token %}<button type="submit" class="btn btn-danger btn-xs">Del</button></form>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:28px">No reports found.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function toggleAll(cb){ document.querySelectorAll('.rpt-chk').forEach(c=>c.checked=cb.checked); }
+function getSelected(){ return [...document.querySelectorAll('.rpt-chk:checked')].map(c=>c.value); }
+function bulkPDF(){
+  const ids=getSelected(); if(!ids.length){alert('Select at least one report.');return;}
+  window.open('{% url "bulk_report_pdf" %}?'+ids.map(id=>'ids='+id).join('&'),'_blank');
+}
+function bulkPrint(){
+  const ids=getSelected(); if(!ids.length){alert('Select at least one report.');return;}
+  window.open('{% url "bulk_report_print" %}?'+ids.map(id=>'ids='+id).join('&'),'_blank');
+}
+</script>
+{% endblock %}

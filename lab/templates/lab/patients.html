@@ -1,0 +1,117 @@
+{% extends 'lab/base.html' %}
+{% block title %}Patients — Indian Path-Lab{% endblock %}
+{% block page_title %}Patient Registry{% endblock %}
+{% block extra_head %}
+<style>
+@media(max-width:640px){
+  .topbar form{display:none!important;}
+  .pat-search-mobile{display:flex;gap:6px;margin-bottom:10px;}
+  .pat-search-mobile .sbox{flex:1;}
+  .pat-search-mobile .sbox input{width:100%;}
+}
+@media(min-width:641px){.pat-search-mobile{display:none;}}
+</style>
+{% endblock %}
+{% block topbar_actions %}
+<form method="get" style="display:flex;gap:7px;align-items:center" class="no-print">
+  <div class="sbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" name="q" value="{{ q }}" placeholder="Name / mobile / ID..."></div>
+  <button type="submit" class="btn btn-secondary btn-sm">Search</button>
+</form>
+{% if user_role == 'admin' or user_role == 'staff' %}
+<button class="btn btn-primary btn-sm no-print" onclick="openModal('modal-add')">+ Add Patient</button>
+{% endif %}
+{% endblock %}
+{% block content %}
+<!-- Mobile search bar -->
+<form method="get" class="pat-search-mobile no-print">
+  <div class="sbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" name="q" value="{{ q }}" placeholder="Search patients..."></div>
+  <button type="submit" class="btn btn-secondary btn-sm">Go</button>
+  {% if user_role == 'admin' or user_role == 'staff' %}<button type="button" class="btn btn-primary btn-sm" onclick="openModal('modal-add')">+</button>{% endif %}
+</form>
+<div class="card">
+  <div class="card-hd"><div><div class="card-title">All Patients</div><div class="card-sub">{{ patients|length }} record(s)</div></div></div>
+  <div class="tw"><table>
+    <thead><tr><th>Photo</th><th>ID</th><th>Name</th><th>Age/Gender</th><th>Mobile</th><th>Doctor</th><th>Priority</th><th>Registered</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for pt in patients %}
+    <tr>
+      <td>{% if pt.photo %}<img src="{{ pt.photo.url }}" style="width:34px;height:34px;border-radius:8px;object-fit:cover">{% else %}<div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">{{ pt.first_name.0 }}</div>{% endif %}</td>
+      <td><span class="mono">{{ pt.patient_id }}</span></td>
+      <td><strong style="color:var(--txt)">{{ pt.full_name }}</strong>{% if pt.blood_group %}<br><span class="badge b-red" style="font-size:9px">{{ pt.blood_group }}</span>{% endif %}</td>
+      <td style="color:var(--txt2)">{{ pt.age }} yr / {{ pt.gender }}</td>
+      <td style="font-family:var(--mono);font-size:11px">{{ pt.mobile }}</td>
+      <td style="font-size:11px;color:var(--txt2)">{{ pt.referring_doctor.name|default:"Self" }}</td>
+      <td>{% if pt.priority == 'Emergency' %}<span class="badge b-red">Emergency</span>{% elif pt.priority == 'Urgent' %}<span class="badge b-yellow">Urgent</span>{% else %}<span class="badge b-green">Normal</span>{% endif %}</td>
+      <td style="font-size:11px;color:var(--txt3)">{{ pt.registered_at|date:"d M Y" }}</td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+        <a href="{% url 'booking_new_pt' pt.pk %}" class="btn btn-primary btn-xs">+ Book</a>
+        {% if user_role == 'admin' or user_role == 'staff' %}
+        <button class="btn btn-secondary btn-xs" onclick="openEdit({{ pt.pk }},'{{ pt.first_name|escapejs }}','{{ pt.last_name|escapejs }}','{{ pt.age }}','{{ pt.gender }}','{{ pt.mobile }}','{{ pt.email|escapejs }}','{{ pt.blood_group }}','{{ pt.priority }}','{{ pt.referring_doctor.pk|default:"" }}','{{ pt.address|escapejs }}','{{ pt.honorific }}','{{ pt.age_unit }}')">Edit</button>
+        {% endif %}
+        {% if user_role == 'admin' %}
+        <form method="post" action="{% url 'patient_delete' pt.pk %}" style="display:inline" onsubmit="return confirm('Delete?')">{% csrf_token %}<button type="submit" class="btn btn-danger btn-xs">Del</button></form>
+        {% endif %}
+      </div></td>
+    </tr>
+    {% empty %}<tr><td colspan="9" style="text-align:center;color:var(--txt3);padding:28px">No patients found.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% if user_role == 'admin' or user_role == 'staff' %}
+<div class="mover" id="modal-add">
+  <div class="mbox">
+    <div class="mhd"><div class="mtitle">Register New Patient</div><button class="mclose" onclick="closeModal('modal-add')">×</button></div>
+    <form method="post" action="{% url 'patient_add' %}" enctype="multipart/form-data">{% csrf_token %}
+      <div class="mbody">
+        <div class="frow">
+          <div class="fg"><label class="fl">Honorific</label><select class="fc" name="honorific"><option value="Mr.">Mr.</option><option value="Mrs.">Mrs.</option><option value="Ms.">Ms.</option><option value="Miss">Miss</option><option value="Dr.">Dr.</option><option value="Prof.">Prof.</option><option value="Master">Master</option><option value="Baby">Baby</option><option value="M/s">M/s</option></select></div>
+          <div class="fg"><label class="fl">Gender</label><select class="fc" name="gender"><option>Male</option><option>Female</option><option>Child (M)</option><option>Child (F)</option><option>Other</option></select></div>
+        </div>
+        <div class="frow"><div class="fg"><label class="fl">First Name <span class="req">*</span></label><input class="fc" name="first_name" required></div><div class="fg"><label class="fl">Last Name</label><input class="fc" name="last_name"></div></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Age <span class="req">*</span></label><div style="display:flex;gap:6px"><input class="fc" type="number" name="age" required style="flex:1"><select class="fc" name="age_unit" style="width:80px;flex-shrink:0"><option value="Years">Yrs</option><option value="Months">Mon</option><option value="Days">Days</option></select></div></div>
+          <div class="fg"><label class="fl">Mobile <span style="font-size:10px;font-weight:400;color:var(--txt3)">(optional)</span></label><input class="fc" name="mobile" placeholder=""></div>
+        </div>
+        <div class="frow"><div class="fg"><label class="fl">Blood Group</label><select class="fc" name="blood_group"><option value="">Unknown</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div><div class="fg"></div></div>
+        <div class="frow"><div class="fg"><label class="fl">Priority</label><select class="fc" name="priority"><option>Normal</option><option>Urgent</option><option>Emergency</option></select></div><div class="fg"><label class="fl">Referring Doctor</label><select class="fc" name="ref_doctor"><option value="">Self</option>{% for d in doctors %}<option value="{{ d.pk }}">{{ d.name }}</option>{% endfor %}</select></div></div>
+        <div class="frow"><div class="fg"><label class="fl">Address</label><input class="fc" name="address"></div><div class="fg"><label class="fl">Photo</label><input class="fc" type="file" name="photo" accept="image/*"></div></div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-add')">Cancel</button><button type="submit" class="btn btn-primary">Register</button></div>
+    </form>
+  </div>
+</div>
+<div class="mover" id="modal-edit">
+  <div class="mbox">
+    <div class="mhd"><div class="mtitle">Edit Patient</div><button class="mclose" onclick="closeModal('modal-edit')">×</button></div>
+    <form method="post" id="edit-form" enctype="multipart/form-data">{% csrf_token %}
+      <div class="mbody">
+        <div class="frow"><div class="fg"><label class="fl">First Name</label><input class="fc" name="first_name" id="e-fn"></div><div class="fg"><label class="fl">Last Name</label><input class="fc" name="last_name" id="e-ln"></div></div>
+        <div class="frow"><div class="fg"><label class="fl">Honorific</label><select class="fc" name="honorific" id="e-hon"><option value="Mr.">Mr.</option><option value="Mrs.">Mrs.</option><option value="Ms.">Ms.</option><option value="Miss">Miss</option><option value="Dr.">Dr.</option><option value="Prof.">Prof.</option><option value="Master">Master</option><option value="Baby">Baby</option><option value="M/s">M/s</option></select></div><div class="fg"><label class="fl">Gender</label><select class="fc" name="gender" id="e-gen"><option>Male</option><option>Female</option><option>Child (M)</option><option>Child (F)</option><option>Other</option></select></div></div>
+        <div class="frow"><div class="fg"><label class="fl">Age</label><div style="display:flex;gap:6px"><input class="fc" type="number" name="age" id="e-age" style="flex:1"><select class="fc" name="age_unit" id="e-ageunit" style="width:80px;flex-shrink:0"><option value="Years">Yrs</option><option value="Months">Mon</option><option value="Days">Days</option></select></div></div><div class="fg"><label class="fl">Mobile (optional)</label><input class="fc" name="mobile" id="e-mob"></div></div>
+        <div class="frow"><div style="display:none"></div><div class="fg"><label class="fl">Blood Group</label><select class="fc" name="blood_group" id="e-blood"><option value="">Unknown</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div></div>
+        <div class="frow"><div class="fg"><label class="fl">Priority</label><select class="fc" name="priority" id="e-pri"><option>Normal</option><option>Urgent</option><option>Emergency</option></select></div><div class="fg"><label class="fl">Referring Doctor</label><select class="fc" name="ref_doctor" id="e-doc"><option value="">Self</option>{% for d in doctors %}<option value="{{ d.pk }}">{{ d.name }}</option>{% endfor %}</select></div></div>
+        <div class="frow"><div class="fg"><label class="fl">Address</label><input class="fc" name="address" id="e-addr"></div><div class="fg"><label class="fl">New Photo</label><input class="fc" type="file" name="photo" accept="image/*"></div></div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-edit')">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script>
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mover').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+function openEdit(pk,fn,ln,age,gen,mob,email,blood,pri,docId,addr,hon,ageunit){
+  document.getElementById('edit-form').action='/patients/'+pk+'/edit/';
+  document.getElementById('e-fn').value=fn;document.getElementById('e-ln').value=ln;
+  document.getElementById('e-hon').value=hon||'Mr.';
+  document.getElementById('e-age').value=age;document.getElementById('e-mob').value=mob;
+  document.getElementById('e-ageunit').value=ageunit||'Years';
+  document.getElementById('e-addr').value=addr;document.getElementById('e-gen').value=gen;
+  document.getElementById('e-blood').value=blood;document.getElementById('e-pri').value=pri;
+  document.getElementById('e-doc').value=docId;openModal('modal-edit');
+}
+</script>
+{% endblock %}

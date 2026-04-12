@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>IPL Assistant</title>
+<style>
+[data-theme="dark"]{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--surface:#21262d;--border:#30363d;--teal:#00b8a9;--teal-d:#009688;--teal-glow:rgba(0,184,169,0.15);--blue:#388bfd;--txt:#e6edf3;--txt2:#8b949e;--txt3:#484f58;--user-bg:#1a3a5c;--user-border:#1d4a7a;--bot-bg:#1c2128;--shadow:0 4px 20px rgba(0,0,0,0.4);}
+[data-theme="light"]{--bg:#f6f8fa;--bg2:#ffffff;--bg3:#f0f2f5;--surface:#eaeef2;--border:#d0d7de;--teal:#008f85;--teal-d:#007068;--teal-glow:rgba(0,143,133,0.1);--blue:#0969da;--txt:#1f2328;--txt2:#636c76;--txt3:#9198a1;--user-bg:#dbeafe;--user-border:#93c5fd;--bot-bg:#ffffff;--shadow:0 4px 20px rgba(0,0,0,0.08);}
+[data-theme="midnight"]{--bg:#070b14;--bg2:#0d1526;--bg3:#111e35;--surface:#162240;--border:#1e304d;--teal:#00d4c8;--teal-d:#00a89e;--teal-glow:rgba(0,212,200,0.15);--blue:#4d9fff;--txt:#e8eef8;--txt2:#7a8ba8;--txt3:#3a4a65;--user-bg:#0d2545;--user-border:#1a3f6e;--bot-bg:#0d1526;--shadow:0 4px 24px rgba(0,0,0,0.6);}
+[data-theme="forest"]{--bg:#0a1208;--bg2:#0f1c0c;--bg3:#142210;--surface:#1a2e14;--border:#253d1c;--teal:#4caf50;--teal-d:#388e3c;--teal-glow:rgba(76,175,80,0.15);--blue:#81c784;--txt:#e8f5e9;--txt2:#81a678;--txt3:#4a6b45;--user-bg:#1b3a1c;--user-border:#2e5c2e;--bot-bg:#0f1c0c;--shadow:0 4px 20px rgba(0,0,0,0.5);}
+[data-theme="sunset"]{--bg:#1a0a00;--bg2:#261200;--bg3:#301800;--surface:#3d2000;--border:#522c00;--teal:#ff7043;--teal-d:#e64a19;--teal-glow:rgba(255,112,67,0.15);--blue:#ffab40;--txt:#fff3e0;--txt2:#bcaaa4;--txt3:#7d5a4f;--user-bg:#3e1f00;--user-border:#5d3000;--bot-bg:#261200;--shadow:0 4px 20px rgba(0,0,0,0.5);}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;height:-webkit-fill-available;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);display:flex;flex-direction:column;height:100vh;height:-webkit-fill-available;overflow:hidden;transition:background .3s,color .3s;}
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;position:relative;z-index:10;}
+.hdr-icon{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.hdr-title{font-size:14px;font-weight:700;color:var(--txt);}
+.hdr-sub{font-size:10px;color:var(--txt2);margin-top:1px;}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.status{display:flex;align-items:center;gap:4px;}
+.status-dot{width:7px;height:7px;background:#3fb950;border-radius:50%;}
+.status-lbl{font-size:10px;color:#3fb950;font-weight:600;}
+.theme-btn{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 9px;color:var(--txt2);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:4px;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.theme-btn:hover{border-color:var(--teal);color:var(--teal);}
+.theme-dropdown{position:absolute;top:58px;right:14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:6px;z-index:200;box-shadow:var(--shadow);min-width:168px;display:none;}
+.theme-dropdown.open{display:block;}
+.theme-opt{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--txt2);transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.theme-opt:hover,.theme-opt.active{background:var(--surface);color:var(--teal);}
+.t-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.chat-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 12px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;}
+.chat-area::-webkit-scrollbar{width:3px;}
+.chat-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.msg{display:flex;gap:8px;animation:fadeUp .22s ease;max-width:93%;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.msg.bot{align-self:flex-start;}
+.msg.user{align-self:flex-end;flex-direction:row-reverse;}
+.msg-av{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.bot .msg-av{background:linear-gradient(135deg,var(--teal),var(--blue));}
+.user .msg-av{background:var(--surface);}
+.msg-bubble{padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.65;word-break:break-word;}
+.bot .msg-bubble{background:var(--bot-bg);border:1px solid var(--border);border-top-left-radius:3px;}
+.user .msg-bubble{background:var(--user-bg);border:1px solid var(--user-border);border-top-right-radius:3px;}
+.msg-bubble strong{color:var(--teal);font-weight:600;}
+.msg-bubble ul{margin:5px 0 3px 16px;}
+.msg-bubble li{margin-bottom:2px;}
+.msg-bubble .tag{display:inline-block;background:var(--teal-glow);color:var(--teal);border:1px solid rgba(0,184,169,.3);padding:1px 7px;border-radius:4px;font-size:11px;font-weight:600;margin:1px 2px;}
+.msg-bubble .url{color:var(--blue);font-family:monospace;font-size:11px;background:rgba(56,139,253,.08);padding:1px 5px;border-radius:3px;}
+.msg-bubble table{width:100%;border-collapse:collapse;margin-top:6px;font-size:11px;}
+.msg-bubble td,.msg-bubble th{padding:4px 7px;border:1px solid var(--border);}
+.msg-bubble th{background:var(--surface);color:var(--teal);font-weight:600;}
+.typing-wrap{display:flex;gap:8px;align-self:flex-start;}
+.typing{display:flex;gap:4px;padding:10px 13px;background:var(--bot-bg);border:1px solid var(--border);border-radius:12px;border-top-left-radius:3px;}
+.typing span{width:6px;height:6px;background:var(--txt3);border-radius:50%;animation:bounce .9s infinite;}
+.typing span:nth-child(2){animation-delay:.15s;}
+.typing span:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+.suggestions{padding:6px 12px 8px;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0;}
+.sug-btn{padding:6px 12px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--txt2);font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
+.sug-btn:active{border-color:var(--teal);color:var(--teal);background:var(--teal-glow);}
+.input-wrap{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);padding:10px 12px;padding-bottom:max(12px,env(safe-area-inset-bottom));display:flex;align-items:flex-end;gap:8px;}
+.input-box{flex:1;background:var(--bg3);border:1.5px solid var(--border);border-radius:22px;padding:10px 16px;color:var(--txt);font-family:inherit;font-size:15px;resize:none;outline:none;min-height:44px;max-height:120px;line-height:1.5;transition:border .2s;-webkit-appearance:none;display:block;}
+.input-box:focus{border-color:var(--teal);}
+.input-box::placeholder{color:var(--txt3);}
+.send-btn{width:44px;height:44px;background:var(--teal);border:none;border-radius:50%;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.send-btn:active{transform:scale(0.92);background:var(--teal-d);}
+.send-btn svg{width:18px;height:18px;color:#fff;margin-left:2px;}
+.back-btn{width:34px;height:34px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--txt2);flex-shrink:0;text-decoration:none;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.back-btn:hover,.back-btn:active{background:var(--teal-glow);border-color:var(--teal);color:var(--teal);text-decoration:none;}
+.back-btn svg{width:16px;height:16px;}
+@media(max-width:480px){
+  .hdr-title{font-size:13px;}
+  .hdr-sub{display:none;}
+  .status-lbl{display:none;}
+  .theme-btn span{display:none;}
+  .chat-area{padding:10px 8px;}
+  .msg{max-width:98%;}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/dashboard/" class="back-btn" title="Back to Dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  </a>
+  <div class="hdr-icon">🔬</div>
+  <div><div class="hdr-title">IPL Assistant</div><div class="hdr-sub">Indian Path-Lab — LMS Help Bot</div></div>
+  <div class="hdr-right">
+    <div class="status"><div class="status-dot"></div><span class="status-lbl">Offline</span></div>
+  </div>
+</div>
+<div class="chat-area" id="chatArea"></div>
+<div class="suggestions" id="suggestions"></div>
+<div class="input-wrap">
+  <textarea class="input-box" id="inputBox" placeholder="Type your question here..." rows="1"></textarea>
+  <button class="send-btn" onclick="sendMsg()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+  </button>
+</div>
+<script>
+const HINDI=['kaise','kya','karo','kare','karta','batao','chahiye','not','nai','hai','hain','hoga','mein','pe','se','ko','ka','ki','ke','aur','par','bhi','sab','kyun','kab','yaha','mujhe','hum','apna','dena','lena','nikalo','daalo','bharo','kholna','chalu','theek','samajh','dekho'];
+function detectLang(t){const w=t.toLowerCase().split(/\s+/);let h=0;for(const x of w)if(HINDI.some(d=>x.includes(d)))h++;return h/w.length>0.3?'hi':'en';}
+
+const KB=[
+  {tags:['login','signin','password','username','kaise login'],
+   en:`<strong>How to Login:</strong><br>1. Open <span class="url">127.0.0.1:8000</span><br>2. Enter Username & Password<br>3. Click <strong>Sign In</strong><br><br><strong>Demo Accounts:</strong><table><tr><th>Role</th><th>User</th><th>Pass</th></tr><tr><td>Admin</td><td>admin</td><td>Admin@1234</td></tr><tr><td>Staff</td><td>staff</td><td>Staff@1234</td></tr><tr><td>Doctor</td><td>doctor</td><td>Doctor@1234</td></tr></table>`,
+   hi:`<strong>Login Kaise Kare:</strong><br>1. <span class="url">127.0.0.1:8000</span> kholo<br>2. Username & Password daalo<br>3. <strong>Sign In</strong> dabao<br><br><strong>Demo Accounts:</strong><table><tr><th>Role</th><th>User</th><th>Pass</th></tr><tr><td>Admin</td><td>admin</td><td>Admin@1234</td></tr><tr><td>Staff</td><td>staff</td><td>Staff@1234</td></tr><tr><td>Doctor</td><td>doctor</td><td>Doctor@1234</td></tr></table>`,
+   se:['How to logout?','User roles?'],sh:['Logout kaise?','User roles?']},
+  {tags:['logout','exit','bahar','sign out'],
+   en:`<strong>Logout:</strong> Click the &#8594; button at the <strong>bottom of sidebar</strong>.`,
+   hi:`<strong>Logout:</strong> Sidebar ke <strong>sabse neeche</strong> &#8594; button dabao.`,
+   se:['Login?','User roles?'],sh:['Login?','User roles?']},
+  {tags:['role','roles','admin','staff','doctor','patient','permission'],
+   en:`<strong>4 User Roles:</strong><br><span class="tag">Admin</span> Full access — all features<br><span class="tag">Staff</span> Booking, reports, SMS, payments<br><span class="tag">Doctor</span> View reports only<br><span class="tag">Patient</span> Own reports only`,
+   hi:`<strong>4 User Roles:</strong><br><span class="tag">Admin</span> Poora access<br><span class="tag">Staff</span> Booking, reports, SMS, payment<br><span class="tag">Doctor</span> Sirf reports<br><span class="tag">Patient</span> Sirf apni reports`,
+   se:['Add new user?','Patient portal?'],sh:['Naya user?','Patient portal?']},
+  {tags:['booking','book','naya booking','new booking','appointment','receipt','buk'],
+   en:`<strong>New Booking Steps:</strong><br><strong>1.</strong> Sidebar &#8594; New Booking<br><strong>2.</strong> Select/add patient<br><strong>3.</strong> Select tests<br><strong>4.</strong> Referring Doctor (optional)<br><strong>5.</strong> Payment details<br><strong>6.</strong> Save Booking<br><br>Receipt ID auto: <span class="tag">RCP-2026-0001</span><br><br>&#128204; Booking page pe <strong>Pay Online</strong> button bhi hai (Razorpay)!`,
+   hi:`<strong>Naya Booking Steps:</strong><br><strong>1.</strong> Sidebar &#8594; New Booking<br><strong>2.</strong> Patient select/add karo<br><strong>3.</strong> Tests select karo<br><strong>4.</strong> Referring Doctor (optional)<br><strong>5.</strong> Payment details<br><strong>6.</strong> Save Booking<br><br>Receipt ID auto: <span class="tag">RCP-2026-0001</span><br><br>&#128204; Booking page pe <strong>Pay Online</strong> button bhi hai (Razorpay)!`,
+   se:['Online payment?','Insurance claim?','Print bill?','Discount?'],sh:['Online payment?','Insurance claim?','Bill?','Discount?']},
+  {tags:['bill','receipt','invoice','billing'],
+   en:`<strong>Bill PDF:</strong> Booking Detail &#8594; <strong>Bill PDF</strong> or <strong>Bill Print</strong>.<br><br><strong>Online Payment:</strong> If due > 0, a <span class="tag">&#x1F4B3; Pay Online</span> button appears — pay via Razorpay.`,
+   hi:`<strong>Bill PDF:</strong> Booking detail &#8594; <strong>Bill PDF</strong> ya <strong>Print Bill</strong>.<br><br><strong>Online Payment:</strong> Due > 0 hone par <span class="tag">&#x1F4B3; Pay Online</span> button dikhega — Razorpay se payment karo.`,
+   se:['Razorpay setup?','Insurance claim?'],sh:['Razorpay setup?','Insurance claim?']},
+  {tags:['discount','referral','chhoot'],
+   en:`<strong>Discount:</strong> Booking form &#8594; <span class="tag">Discount %</span> direct, <span class="tag">Referral %</span> doctor commission. Auto-calculates.`,
+   hi:`<strong>Discount:</strong> Booking form &#8594; <span class="tag">Discount %</span> direct chhoot, <span class="tag">Referral %</span> doctor commission. Auto-calculate.`,
+   se:['Print bill?','Create booking?'],sh:['Bill?','Booking?']},
+  {tags:['patient','mareez','add patient','naya patient'],
+   en:`<strong>Add Patient:</strong><br>Sidebar &#8594; Patients &#8594; + Add Patient (or from New Booking).<br>Fields: Name, Age, Gender, Mobile, Blood Group, Priority<br>ID auto: <span class="tag">IPL-0001</span>`,
+   hi:`<strong>Patient Add:</strong><br>Sidebar &#8594; Patients &#8594; + Add Patient (ya New Booking se).<br>Fields: Naam, Age, Gender, Mobile, Blood Group, Priority<br>ID auto: <span class="tag">IPL-0001</span>`,
+   se:['Search patient?','Edit patient?'],sh:['Patient search?','Patient edit?']},
+  {tags:['report','result','entry','report entry','result daalo','bharo'],
+   en:`<strong>Report Entry:</strong><br><strong>1.</strong> Booking Detail &#8594; Entry button<br><strong>2.</strong> Enter values for each parameter<br><strong>3.</strong> Flags auto-set: <span class="tag">High</span> <span class="tag">Low</span> <span class="tag">Normal</span><br><strong>4.</strong> Save &#8594; Finalize<br><br><strong>After Finalize:</strong><br>&#8226; SMS/WhatsApp auto-sent to patient<br>&#8226; AI Interpretation auto-generated<br>&#8226; Patient can view in My Reports<br><br><strong>&#9999;&#65039; Inline Edit:</strong> Pencil icon se parameter naam/unit/range badlo.`,
+   hi:`<strong>Report Entry:</strong><br><strong>1.</strong> Booking Detail &#8594; Entry button<br><strong>2.</strong> Har parameter ki value daalo<br><strong>3.</strong> Auto flag: <span class="tag">High</span> <span class="tag">Low</span> <span class="tag">Normal</span><br><strong>4.</strong> Save &#8594; Finalize<br><br><strong>Finalize ke baad:</strong><br>&#8226; Patient ko SMS/WhatsApp auto-jaata hai<br>&#8226; AI Interpretation auto-banti hai<br>&#8226; Patient My Reports mein dekh sakta hai`,
+   se:['AI interpretation?','Send SMS?','FHIR export?','Report PDF?'],sh:['AI interpretation?','SMS bhejo?','FHIR?','Report PDF?']},
+  {tags:['finalize','final','lock','confirm report'],
+   en:`<strong>Finalize Report:</strong><br>&#8226; Locks the report<br>&#8226; <strong>SMS/WhatsApp</strong> auto-sent<br>&#8226; <strong>AI Interpretation</strong> auto-generated<br>&#8226; Patient can see in My Reports<br>&#8226; Only Admin can un-finalize`,
+   hi:`<strong>Finalize:</strong><br>&#8226; Report lock hoti hai<br>&#8226; Patient ko <strong>SMS/WhatsApp</strong> auto-jaata hai<br>&#8226; <strong>AI Interpretation</strong> auto-generate hoti hai<br>&#8226; Sirf Admin unlock kar sakta hai`,
+   se:['Report entry?','SMS settings?','AI interpretation?'],sh:['Report entry?','SMS settings?','AI interpretation?']},
+  {tags:['report pdf','pdf','print report','nikalo','download','direct print','margin'],
+   en:`<strong>Report PDF/Print:</strong><br><span class="tag">&#x1F4C4; PDF</span> Zero margins — best for WhatsApp/email.<br><span class="tag">&#x1F5A8; Direct Print</span> With margins — for letterhead paper.<br><br><strong>New Buttons on Report View:</strong><br><span class="tag">&#x1F916; AI Interpret</span> AI analysis<br><span class="tag">&#x1F4AC; Send SMS</span> Manual SMS<br><span class="tag">&#x1F517; FHIR</span> FHIR JSON export<br><br><strong>Bulk:</strong> Reports list &#8594; checkboxes &#8594; Bulk PDF/Print`,
+   hi:`<strong>Report PDF/Print:</strong><br><span class="tag">&#x1F4C4; PDF</span> Zero margin — WhatsApp ke liye.<br><span class="tag">&#x1F5A8; Direct Print</span> Margin ke saath — letterhead ke liye.<br><br><strong>Report View ke naye buttons:</strong><br><span class="tag">&#x1F916; AI Interpret</span> AI analysis<br><span class="tag">&#x1F4AC; Send SMS</span> Manual SMS<br><span class="tag">&#x1F517; FHIR</span> FHIR JSON export`,
+   se:['AI interpretation?','Send SMS?','HL7 FHIR?'],sh:['AI?','SMS?','HL7 FHIR?']},
+  {tags:['sms','whatsapp','message','notification','msg91','twilio','alert','bhejo','send sms'],
+   en:`<strong>SMS/WhatsApp Notifications:</strong><br><br><strong>Auto:</strong> Report finalize par patient ko auto message.<br><strong>Manual:</strong> Report View &#8594; <span class="tag">&#x1F4AC; Send SMS</span><br><br><strong>Setup (Lab Settings &#8594; SMS/WhatsApp):</strong><br><span class="tag">MSG91</span> India best — msg91.com<br><span class="tag">Twilio</span> International<br><span class="tag">WhatsApp</span> Meta Cloud API<br><br><strong>Log:</strong> Sidebar &#8594; SMS/WhatsApp<br><br>&#9888;&#65039; India: DLT registration zaruri (TRAI rule).`,
+   hi:`<strong>SMS/WhatsApp Notifications:</strong><br><br><strong>Auto:</strong> Report finalize par patient ko auto message jaata hai.<br><strong>Manual:</strong> Report View &#8594; <span class="tag">&#x1F4AC; Send SMS</span><br><br><strong>Setup (Lab Settings &#8594; SMS/WhatsApp):</strong><br><span class="tag">MSG91</span> India ke liye best<br><span class="tag">Twilio</span> International<br><span class="tag">WhatsApp</span> Meta Cloud API<br><br>&#9888;&#65039; India: DLT registration zaruri.`,
+   se:['MSG91 setup?','WhatsApp setup?','Notification log?'],sh:['MSG91 setup?','WhatsApp setup?','Log?']},
+  {tags:['msg91','dlt','sender id','template id'],
+   en:`<strong>MSG91 Setup:</strong><br><strong>1.</strong> Account: msg91.com<br><strong>2.</strong> DLT template TRAI register karein<br><strong>3.</strong> Lab Settings &#8594; SMS/WhatsApp:<br>&nbsp;&#8226; Provider = MSG91<br>&nbsp;&#8226; Auth Key, Sender ID (IPLABS), Template ID<br><strong>4.</strong> Save &#8594; auto SMS active!`,
+   hi:`<strong>MSG91 Setup:</strong><br><strong>1.</strong> Account: msg91.com<br><strong>2.</strong> DLT template register karo (TRAI)<br><strong>3.</strong> Lab Settings &#8594; SMS/WhatsApp:<br>&nbsp;&#8226; Provider = MSG91, Auth Key, Sender ID, Template ID<br><strong>4.</strong> Save karo`,
+   se:['WhatsApp setup?','SMS log?'],sh:['WhatsApp setup?','SMS log?']},
+  {tags:['payment','online payment','razorpay','pay online','gateway','digital payment'],
+   en:`<strong>Online Payment (Razorpay):</strong><br><br>Booking page pe <span class="tag">&#x1F4B3; Pay Online</span> button when due > 0.<br><br><strong>Setup (Lab Settings &#8594; Razorpay):</strong><br><strong>1.</strong> razorpay.com &#8594; Dashboard &#8594; API Keys<br><strong>2.</strong> Key ID + Secret &#8594; Lab Settings<br><strong>3.</strong> Test: <span class="tag">rzp_test_</span> key use karo<br><br><strong>Webhook:</strong> <span class="url">https://domain.com/payment/webhook/</span><br><strong>Log:</strong> Sidebar &#8594; Online Payments<br><br>Run first: <span class="url">pip install razorpay</span>`,
+   hi:`<strong>Online Payment (Razorpay):</strong><br><br>Booking page pe <span class="tag">&#x1F4B3; Pay Online</span> button dikhega.<br><br><strong>Setup (Lab Settings &#8594; Razorpay):</strong><br><strong>1.</strong> razorpay.com &#8594; API Keys<br><strong>2.</strong> Key ID + Secret &#8594; Lab Settings<br><strong>3.</strong> Test ke liye <span class="tag">rzp_test_</span> key<br><br><span class="url">pip install razorpay</span> pehle run karo.`,
+   se:['Payment log?','Test mode?'],sh:['Payment log?','Test mode?']},
+  {tags:['insurance','claim','tpa','policy','mediclaim','bima'],
+   en:`<strong>Insurance Claims:</strong><br><br><strong>New Claim:</strong> Booking Detail &#8594; <span class="tag">&#x1F3E5; Insurance Claim</span><br><br><strong>Status Flow:</strong> Draft &#8594; Submitted &#8594; Under Review &#8594; Approved &#8594; Settled<br><br><strong>Sidebar:</strong> Insurance Claims &#8594; All claims + Companies`,
+   hi:`<strong>Insurance Claims:</strong><br><br><strong>Naya Claim:</strong> Booking Detail &#8594; <span class="tag">&#x1F3E5; Insurance Claim</span><br><br><strong>Status:</strong> Draft &#8594; Submitted &#8594; Under Review &#8594; Approved &#8594; Settled<br><br><strong>Sidebar:</strong> Insurance Claims`,
+   se:['Add insurance company?','Claim status?'],sh:['Company add?','Claim status?']},
+  {tags:['hl7','fhir','his','hospital system','integration','oru'],
+   en:`<strong>HL7/FHIR Integration:</strong><br><br><span class="tag">HL7 v2.5 ORU^R01</span> Lab results HIS ko bhejo<br><span class="tag">FHIR R4</span> DiagnosticReport JSON export<br><br><strong>Report View buttons:</strong><br>&#8594; <span class="tag">&#x1F517; FHIR</span> button click karo<br><br><strong>Setup:</strong> Lab Settings &#8594; HL7/FHIR &#8594; HIS Endpoint URL<br><strong>Log:</strong> Sidebar &#8594; HL7/FHIR`,
+   hi:`<strong>HL7/FHIR Integration:</strong><br><br><span class="tag">HL7 v2.5</span> HIS ko results bhejo<br><span class="tag">FHIR R4</span> JSON export<br><br><strong>Report View &#8594;</strong> <span class="tag">&#x1F517; FHIR</span> button<br><br><strong>Setup:</strong> Lab Settings &#8594; HL7/FHIR &#8594; HIS Endpoint URL`,
+   se:['HL7 log?','FHIR JSON format?'],sh:['HL7 log?','FHIR JSON?']},
+  {tags:['analyser','machine','astm','lab machine','auto import','sysmex','mindray','csv upload','tcp'],
+   en:`<strong>Machine Analyser Interface:</strong><br><br>Lab machines se results auto-import karo.<br><br><strong>Protocols:</strong> ASTM E1394, CSV, TCP/IP, HL7<br><br><strong>Setup:</strong> Sidebar &#8594; Analysers &#8594; Add Machine<br>Test Mapping: <span class="url">{"WBC":5,"HGB":3}</span> (machine code &#8594; param pk)<br><br><strong>CSV Upload:</strong> Sidebar &#8594; Analysers &#8594; Upload CSV<br><br><strong>TCP Listener:</strong><br><span class="url">python manage.py run_analyser_listener --port 4000</span>`,
+   hi:`<strong>Machine Analyser Interface:</strong><br><br>Lab machines se results automatically import karo.<br><br><strong>Protocols:</strong> ASTM E1394, CSV, TCP/IP<br><br><strong>Setup:</strong> Sidebar &#8594; Analysers &#8594; Add Machine<br>Test Mapping: <span class="url">{"WBC":5,"HGB":3}</span><br><br><strong>CSV Upload:</strong> Sidebar &#8594; Analysers<br><br><strong>TCP Listener:</strong><br><span class="url">python manage.py run_analyser_listener --port 4000</span>`,
+   se:['Test mapping?','CSV format?'],sh:['Test mapping?','CSV format?']},
+  {tags:['ai','artificial intelligence','interpretation','diagnostic','gpt','openai','clinical'],
+   en:`<strong>AI Diagnostic Interpretation:</strong><br><br><strong>Auto:</strong> Report finalize par auto-generate.<br><strong>Manual:</strong> Report View &#8594; <span class="tag">&#x1F916; AI Interpret</span><br><br><strong>Features:</strong><br>&#8226; Abnormal parameters detected<br>&#8226; Severity: <span class="tag">Normal</span> <span class="tag">Mild</span> <span class="tag">Moderate</span> <span class="tag">Critical</span><br>&#8226; Hindi + English interpretation<br><br><strong>GPT-4 Upgrade:</strong> <span class="url">pip install openai</span> &#8594; Lab Settings &#8594; AI &#8594; OpenAI Key`,
+   hi:`<strong>AI Diagnostic Interpretation:</strong><br><br><strong>Auto:</strong> Auto-generated on report finalization.<br><strong>Manual:</strong> Report View &#8594; <span class="tag">&#x1F916; AI Interpret</span><br><br>&#8226; Abnormal parameters detected karta hai<br>&#8226; Determines severity level<br>&#8226; Clinical interpretation in English<br><br><strong>GPT-4:</strong> <span class="url">pip install openai</span> &#8594; Lab Settings &#8594; AI &#8594; OpenAI Key`,
+   se:['GPT-4 setup?','AI approve?','Auto off?'],sh:['GPT-4 setup?','AI approve?','Auto off?']},
+  {tags:['branch','branches','multi branch','location','centre'],
+   en:`<strong>Multi-Branch Support:</strong><br><br>Manage multiple lab branches from one system.<br><br><strong>Setup:</strong> Sidebar &#8594; Branches &#8594; Add New Branch<br>Branch ID auto: <span class="tag">BR-001</span><br><br><strong>Access:</strong> Admin = All branches, Staff = Own branch<br>&#9888;&#65039; Admin only.`,
+   hi:`<strong>Multi-Branch:</strong><br><br>Ek system se kai branches manage karo.<br><br><strong>Setup:</strong> Sidebar &#8594; Branches &#8594; Add New Branch<br>Branch ID auto: <span class="tag">BR-001</span><br><br>Admin = Sab branches, Staff = Apni branch.`,
+   se:['Add branch?','Staff access?'],sh:['Branch add?','Staff access?']},
+  {tags:['mobile','app','android','ios','flutter','react native','push notification'],
+   en:`<strong>Mobile App Foundation:</strong><br><br>REST APIs ready for Flutter/React Native app:<br><br><strong>Register Device Token:</strong><br><span class="url">POST /api/mobile/register-token/</span><br><span class="url">{token, platform, user_pk}</span><br><br><strong>Patient Reports JSON:</strong><br><span class="url">GET /api/mobile/reports/</span>`,
+   hi:`<strong>Mobile App Foundation:</strong><br><br>Flutter/React Native ke liye APIs ready:<br><br><span class="url">POST /api/mobile/register-token/</span><br><span class="url">GET /api/mobile/reports/</span>`,
+   se:['Patient portal?','API authentication?'],sh:['Patient portal?','API auth?']},
+  {tags:['test','tests','test master','category','sample type'],
+   en:`<strong>Test Master</strong> <span class="url">/tests/</span><br>Name, Category, Sample, Price, TAT.<br>Categories: Haematology, Biochemistry, Serology, Clinical Pathology, Histopathology, Hormones.<br>Add reference range <strong>Parameters</strong> per test.`,
+   hi:`<strong>Test Master</strong> <span class="url">/tests/</span><br>Naam, Category, Sample, Price, TAT.<br>Har test ke andar <strong>Parameters</strong> set karo.`,
+   se:['Set parameters?','Rate list?'],sh:['Parameters?','Rate list?']},
+  {tags:['rate list','price list','rate','charges'],
+   en:`<strong>Rate List</strong> <span class="url">/rate-list/</span> — All test prices. Search + Print. Visible to all.`,
+   hi:`<strong>Rate List</strong> <span class="url">/rate-list/</span> — Saari prices. Search + Print. Sab dekh sakte hain.`,
+   se:['Change price?','Test master?'],sh:['Price change?','Test master?']},
+  {tags:['settings','lab settings','branding','lab name','logo','customize'],
+   en:`<strong>Lab Settings</strong> <span class="url">/settings/</span><br><ul><li>Lab Name, Logo, Header/Footer image</li><li>Staff Names, Signatures</li><li><strong>SMS/WhatsApp</strong> config</li><li><strong>Razorpay</strong> keys</li><li><strong>HL7/FHIR</strong> HIS endpoint</li><li><strong>AI</strong> settings + OpenAI key</li></ul>&#9888;&#65039; Admin only.`,
+   hi:`<strong>Lab Settings</strong> <span class="url">/settings/</span><br>Lab naam, Logo, Staff naam, <strong>SMS</strong> config, <strong>Razorpay</strong> keys, <strong>HL7/FHIR</strong> endpoint, <strong>AI</strong> settings.<br>&#9888;&#65039; Sirf Admin.`,
+   se:['SMS setup?','Razorpay setup?','AI settings?'],sh:['SMS setup?','Razorpay setup?','AI settings?']},
+  {tags:['search','advanced search','dhundho','khojo','find'],
+   en:`<strong>Advanced Search</strong> <span class="url">/search/</span> — Search Patients, Reports, Tests. Date filter available.`,
+   hi:`<strong>Advanced Search</strong> <span class="url">/search/</span> — Patients, Reports, Tests search karo. Date filter bhi.`,
+   se:['Filter reports?'],sh:['Reports filter?']},
+  {tags:['offline','internet','server','run','start','chalu','runserver'],
+   en:`<strong>Run Offline:</strong><br><span class="url">python manage.py runserver</span><br>Browser: <span class="url">http://127.0.0.1:8000</span><br><br>Mobile (same WiFi): <span class="url">python manage.py runserver 0.0.0.0:8000</span>`,
+   hi:`<strong>Offline Chalao:</strong><br><span class="url">python manage.py runserver</span><br>Browser: <span class="url">http://127.0.0.1:8000</span><br>Mobile: <span class="url">runserver 0.0.0.0:8000</span>`,
+   se:['Install?'],sh:['Install?']},
+  {tags:['install','setup','pip','migrate','seed'],
+   en:`<strong>Install:</strong><br><span class="url">pip install -r requirements.txt</span><br><span class="url">python manage.py migrate</span><br><span class="url">python manage.py seed_data</span><br><span class="url">python manage.py createsuperuser</span><br><span class="url">python manage.py runserver</span>`,
+   hi:`<strong>Install:</strong><br><span class="url">pip install -r requirements.txt</span><br><span class="url">python manage.py migrate</span><br><span class="url">python manage.py seed_data</span><br><span class="url">python manage.py createsuperuser</span><br><span class="url">python manage.py runserver</span>`,
+   se:['Run software?'],sh:['Software chalao?']},
+  {tags:['theme','dark','light','color','rang','appearance'],
+   en:`<strong>Theme:</strong> Sidebar bottom &#8594; &#x1F3A8; Theme dots.<br>Available: <span class="tag">Dark</span> <span class="tag">Light</span> <span class="tag">Midnight</span> <span class="tag">Forest</span> <span class="tag">Sunset</span>`,
+   hi:`<strong>Theme:</strong> Sidebar ke neeche &#x1F3A8; dots.<br>Available: <span class="tag">Dark</span> <span class="tag">Light</span> <span class="tag">Midnight</span> <span class="tag">Forest</span> <span class="tag">Sunset</span>`,
+   se:['Login?'],sh:['Login?']},
+  {tags:['hello','hi','hey','namaste','namaskar','salaam','hii'],
+   en:`Hello! &#x1F44B; I'm <strong>IPL Assistant</strong> — Indian Path-Lab help bot.<br><br>I know: Booking, Reports, SMS/WhatsApp, Razorpay Payment, Insurance Claims, HL7/FHIR, AI Interpretation, Machine Analyser, Multi-Branch, Mobile App & more!`,
+   hi:`Namaste! &#x1F64F; Main <strong>IPL Assistant</strong> hoon.<br><br>Mujhe pata hai: Booking, Reports, SMS/WhatsApp, Razorpay, Insurance, HL7/FHIR, AI, Analyser, Multi-Branch, Mobile App aur bahut kuch!`,
+   se:['SMS setup?','Razorpay?','AI interpretation?','Insurance claim?','HL7 FHIR?'],sh:['SMS setup?','Razorpay?','AI?','Insurance?','HL7?']},
+  {tags:['thanks','thank','shukriya','dhanyawad','theek','ok','accha'],
+   en:`You're welcome! &#x1F60A; Ask anything else.`,
+   hi:`Khushi hui! &#x1F60A; No aur sawaal ho toh poochho.`,
+   se:['Online payment?','SMS setup?'],sh:['Online payment?','SMS setup?']},
+  {tags:['parameter','param','range','edit param','lower limit','upper limit','pencil'],
+   en:`<strong>Edit Parameter (on-the-fly):</strong><br>Report Entry &#8594; &#9999;&#65039; pencil icon &#8594; change Name/Unit/Range &#8594; Save.<br><br><span class="tag">Note</span> This report only. Global: <span class="url">/tests/</span>`,
+   hi:`<strong>Parameter Edit:</strong><br>Report Entry &#8594; &#9999;&#65039; pencil icon &#8594; Naam/Unit/Range badlo &#8594; Save.<br><br><span class="tag">Note</span> Sirf is report ke liye. Global: <span class="url">/tests/</span>`,
+   se:['Report entry?','Test parameters?'],sh:['Report entry?','Test parameters?']},
+  {tags:['__default__'],
+   en:`Sorry, I only know about <strong>Indian Path-Lab LMS</strong>. Try asking:`,
+   hi:`Mujhe samajh not aaya. Main sirf <strong>Indian Path-Lab LMS</strong> ke baare mein jaanta hoon:`,
+   se:['Create booking?','SMS setup?','Razorpay payment?','AI interpretation?','Insurance claim?','HL7 FHIR?','Machine analyser?','Multi-branch?'],
+   sh:['Booking?','SMS setup?','Razorpay?','AI?','Insurance?','HL7 FHIR?','Analyser?','Branch?']}
+];
+
+// Theme is managed globally by base.html
+
+const ca=document.getElementById('chatArea'),ib=document.getElementById('inputBox'),sg=document.getElementById('suggestions');
+
+function norm(t){return t.toLowerCase().replace(/[?!.,;:]/g,'').replace(/\s+/g,' ').trim();}
+function find(q){
+  const nq=norm(q),ws=nq.split(' ');
+  let best=null,bs=0;
+  for(const it of KB){
+    if(it.tags[0]==='__default__')continue;
+    let s=0;
+    for(const tg of it.tags){if(nq.includes(tg))s+=tg.length*2;for(const w of ws)if(tg.includes(w)&&w.length>2)s+=w.length;}
+    if(s>bs){bs=s;best=it;}
+  }
+  return bs<3?KB.find(k=>k.tags[0]==='__default__'):best;
+}
+function addMsg(html,isUser){
+  const w=document.createElement('div');w.className='msg '+(isUser?'user':'bot');
+  const av=document.createElement('div');av.className='msg-av';av.textContent=isUser?'👤':'🔬';
+  const b=document.createElement('div');b.className='msg-bubble';
+  if(isUser)b.textContent=html;else b.innerHTML=html;
+  w.appendChild(av);w.appendChild(b);ca.appendChild(w);ca.scrollTop=ca.scrollHeight;
+}
+function showTyping(){
+  const w=document.createElement('div');w.className='typing-wrap';w.id='typ';
+  const av=document.createElement('div');av.className='msg-av';av.textContent='🔬';
+  const t=document.createElement('div');t.className='typing';t.innerHTML='<span></span><span></span><span></span>';
+  w.appendChild(av);w.appendChild(t);ca.appendChild(w);ca.scrollTop=ca.scrollHeight;
+}
+function removeTyping(){const t=document.getElementById('typ');if(t)t.remove();}
+function setSugg(items){
+  sg.innerHTML='';if(!items||!items.length)return;
+  items.forEach(s=>{const b=document.createElement('button');b.className='sug-btn';b.textContent=s;b.onclick=()=>{ib.value=s;sendMsg();};sg.appendChild(b);});
+}
+function sendMsg(){
+  const txt=ib.value.trim();if(!txt)return;
+  ib.value='';ib.style.height='auto';setSugg([]);addMsg(txt,true);showTyping();
+  setTimeout(()=>{
+    removeTyping();
+    const lang=detectLang(txt);
+    const res=find(txt);
+    addMsg(res[lang]||res.en,false);
+    setSugg(lang==='hi'?(res.sh||res.se):(res.se||res.sh));
+  },350+Math.random()*300);
+}
+ib.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
+ib.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    addMsg(`Hello! &#x1F44B; I'm <strong>IPL Assistant</strong> — Indian Path-Lab v2.0 help bot.<br><br>I can help you with: Booking, Reports, <strong>SMS/WhatsApp</strong>, <strong>Online Payment</strong>, <strong>Insurance Claims</strong>, <strong>HL7/FHIR</strong>, <strong>AI Interpretation</strong>, <strong>Machine Analyser</strong>, Multi-Branch & more!<br><br>What would you like to know?`,false);
+    setSugg(['SMS/WhatsApp setup?','Razorpay payment?','AI interpretation?','Insurance claim?','Machine analyser?','HL7 FHIR?']);
+  },300);
+});
+</script>
+</body>
+</html>

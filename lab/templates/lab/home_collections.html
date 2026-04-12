@@ -1,0 +1,28 @@
+{% extends 'lab/base.html' %}
+{% block title %}Home Collections — IPL{% endblock %}
+{% block page_title %}Home Collections{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div><div class="wb-title">🏠 Home Collections</div><div class="wb-sub">Scheduled home sample collection requests</div></div>
+</div>
+<div class="card">
+  <div class="tw"><table>
+    <thead><tr><th>Date & Time</th><th>Patient</th><th>Receipt</th><th>Address</th><th>Fee</th><th>Phlebotomist</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for c in collections %}
+      <tr>
+        <td style="font-size:11px;white-space:nowrap"><strong>{{ c.scheduled_date|date:"d M Y" }}</strong><br>{{ c.scheduled_time|time:"h:i A" }}</td>
+        <td><strong>{{ c.booking.patient.full_name }}</strong><br><span style="font-size:10px;color:var(--txt3)">{{ c.booking.patient.mobile }}</span></td>
+        <td><a href="{% url 'booking_detail' c.booking.pk %}" style="color:var(--blue)" class="mono">{{ c.booking.receipt_id }}</a></td>
+        <td style="font-size:11px;max-width:200px">{{ c.address|truncatechars:60 }}</td>
+        <td style="color:var(--teal);font-weight:600">₹{{ c.collection_fee }}</td>
+        <td style="font-size:11px">{{ c.Phlebotomist.get_full_name|default:"—" }}</td>
+        <td>{% if c.status == 'collected' %}<span class="badge b-green">✓ Collected</span>{% elif c.status == 'assigned' %}<span class="badge b-blue">Assigned</span>{% elif c.status == 'cancelled' %}<span class="badge" style="background:var(--red-l);color:var(--red)">Cancelled</span>{% else %}<span class="badge b-yellow">Scheduled</span>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" style="text-align:center;padding:48px;color:var(--txt3)">No home collections scheduled. Go to a Booking detail page to schedule one.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

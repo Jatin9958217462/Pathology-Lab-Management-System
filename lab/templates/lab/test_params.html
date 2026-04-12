@@ -1,0 +1,157 @@
+{% extends 'lab/base.html' %}
+{% block title %}Parameters — {{ test.name }}{% endblock %}
+{% block page_title %}Parameters: {{ test.name }}{% endblock %}
+{% block extra_head %}
+<style>
+@media(max-width:640px){
+  .tw table{min-width:520px;}
+  .frow3{grid-template-columns:1fr 1fr;}
+}
+</style>
+{% endblock %}
+{% block topbar_actions %}<a href="{% url 'tests' %}" class="btn btn-secondary btn-sm">← Tests</a>{% endblock %}
+{% block content %}
+
+{% if user_role == 'admin' %}
+<!-- Test Name Edit Card -->
+<div class="card" style="margin-bottom:14px">
+  <div class="card-hd"><div class="card-title">✏️ Edit Test Name</div></div>
+  <form method="post" action="" style="padding:14px">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="edit_test">
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">Short Name <span class="req">*</span> <span style="font-size:10px;color:var(--txt3)">(search & internal reference)</span></label>
+        <input class="fc" name="test_name" value="{{ test.name }}" required placeholder="e.g. CBC">
+      </div>
+      <div class="fg">
+        <label class="fl">Full Name on Report <span style="font-size:10px;color:var(--txt3)">(printed on report — blank = use short name)</span></label>
+        <input class="fc" name="test_full_name" value="{{ test.full_name }}" placeholder="e.g. Complete Blood Count">
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px">
+      <button type="submit" class="btn btn-primary">Save Test Name</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+<div class="grid2" style="align-items:start">
+  <div class="card">
+    <div class="card-hd"><div><div class="card-title">Reference Parameters</div><div class="card-sub">{{ params|length }} defined</div></div></div>
+    <div class="tw"><table>
+      <thead><tr>
+        <th>Parameter</th><th>Unit</th><th>Lower</th><th>Upper</th><th>Default</th><th>Type</th>
+        {% if user_role == 'admin' %}<th style="width:90px">Action</th>{% endif %}
+      </tr></thead>
+      <tbody>
+      {% for p in params %}
+      <tr id="row-{{ p.pk }}">
+        <td class="view-{{ p.pk }}" style="font-weight:500;color:var(--txt)">{{ p.param_name }}</td>
+        <td class="view-{{ p.pk }}" style="color:var(--txt3);font-size:11px">{{ p.unit|default:"—" }}</td>
+        <td class="view-{{ p.pk }}" style="font-family:var(--mono);font-size:11px;color:var(--yellow)">{{ p.lower_limit|default:"—" }}</td>
+        <td class="view-{{ p.pk }}" style="font-family:var(--mono);font-size:11px;color:var(--yellow)">{{ p.upper_limit|default:"—" }}</td>
+        <td class="view-{{ p.pk }}" style="font-size:11px;color:var(--teal)">{{ p.default_value|default:"—" }}</td>
+        <td class="view-{{ p.pk }}">{% if p.is_text %}<span class="badge b-blue">Text</span>{% else %}<span class="badge b-teal">Numeric</span>{% endif %}</td>
+
+        <td class="edit-{{ p.pk }}" style="display:none"><input class="fc" style="padding:3px 6px;font-size:11px" id="e_name_{{ p.pk }}" value="{{ p.param_name }}"></td>
+        <td class="edit-{{ p.pk }}" style="display:none"><input class="fc" style="padding:3px 6px;font-size:11px" id="e_unit_{{ p.pk }}" value="{{ p.unit }}"></td>
+        <td class="edit-{{ p.pk }}" style="display:none"><input class="fc" style="padding:3px 6px;font-size:11px" type="number" step="any" id="e_lower_{{ p.pk }}" value="{{ p.lower_limit|default:'' }}"></td>
+        <td class="edit-{{ p.pk }}" style="display:none"><input class="fc" style="padding:3px 6px;font-size:11px" type="number" step="any" id="e_upper_{{ p.pk }}" value="{{ p.upper_limit|default:'' }}"></td>
+        <td class="edit-{{ p.pk }}" style="display:none"><input class="fc" style="padding:3px 6px;font-size:11px" id="e_default_{{ p.pk }}" placeholder="Default" value="{{ p.default_value|default:'' }}"></td>
+        <td class="edit-{{ p.pk }}" style="display:none"><select class="fc" style="padding:3px 6px;font-size:11px" id="e_type_{{ p.pk }}"><option value="">Numeric</option><option value="1" {% if p.is_text %}selected{% endif %}>Text</option></select></td>
+
+        {% if user_role == 'admin' %}
+        <td>
+          <div class="view-{{ p.pk }}" style="display:flex;gap:4px">
+            <button onclick="startEdit({{ p.pk }})" class="btn btn-secondary btn-xs">Edit</button>
+            <form method="post" style="display:inline" onsubmit="return confirm('Delete?')">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="param_pk" value="{{ p.pk }}">
+              <button type="submit" class="btn btn-danger btn-xs">Del</button>
+            </form>
+          </div>
+          <div class="edit-{{ p.pk }}" style="display:none;gap:4px;flex-direction:column">
+            <button onclick="saveParam({{ p.pk }})" class="btn btn-primary btn-xs">💾 Save</button>
+            <button onclick="cancelEdit({{ p.pk }})" class="btn btn-secondary btn-xs">Cancel</button>
+          </div>
+        </td>
+        {% endif %}
+      </tr>
+      {% empty %}<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:20px">No parameters yet.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+
+  {% if user_role == 'admin' %}
+  <div class="fpanel">
+    <div class="fpanel-hd"><div class="fpanel-title">Add Parameter</div></div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="fpanel-body">
+        <div class="fg"><label class="fl">Parameter Name <span class="req">*</span></label><input class="fc" name="param_name" required placeholder="e.g. Hemoglobin"></div>
+        <div class="frow"><div class="fg"><label class="fl">Unit</label><input class="fc" name="unit" placeholder="g/dl"></div><div class="fg"><label class="fl">Test Method</label><input class="fc" name="test_method" placeholder="Colorimetric"></div></div>
+        <div class="frow"><div class="fg"><label class="fl">Lower Limit</label><input class="fc" type="number" step="any" name="lower_limit" placeholder="11.5"></div><div class="fg"><label class="fl">Upper Limit</label><input class="fc" type="number" step="any" name="upper_limit" placeholder="16.0"></div></div>
+        <div class="fg"><label class="fl">Default Value <span style="font-size:10px;color:var(--txt3);font-weight:400">(auto-fill if reading blank)</span></label><input class="fc" name="default_value" placeholder="e.g. Negative, 0.0, Normal"></div>
+        <div class="fg"><label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--txt2)"><input type="checkbox" name="is_text" style="accent-color:var(--teal)"> Text result (e.g. Positive/Negative)</label></div>
+      </div>
+      <div class="fpanel-foot"><button type="submit" class="btn btn-primary">Add Parameter</button></div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+{% if role == 'admin' %}
+<div class="card" style="margin-top:14px">
+  <div class="card-hd"><div class="card-title">📝 Test Report Note</div><div class="card-sub">This note prints at the bottom of every report for this test</div></div>
+  <form method="post" action="{% url 'test_note_save' test.pk %}" style="padding:14px">
+    {% csrf_token %}
+    <div class="fg">
+      <label class="fl">Note Text <span style="font-size:10px;font-weight:400;color:var(--txt3)">(Leave blank to remove note)</span></label>
+      <textarea class="fc" name="note_text" rows="3" placeholder="e.g. The cell morphology is well preserved for 24 hrs...">{% if test.note %}{{ test.note.note_text }}{% endif %}</textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+      <button type="submit" class="btn btn-primary">Save Note</button>
+      {% if test.note %}<button type="submit" onclick="document.querySelector('[name=note_text]').value=''" class="btn btn-danger">Remove Note</button>{% endif %}
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function startEdit(pk){
+  document.querySelectorAll('.view-'+pk).forEach(el=>el.style.display='none');
+  document.querySelectorAll('.edit-'+pk).forEach(el=>{el.style.display='';});
+  var actionDiv=document.querySelector('#row-'+pk+' td:last-child .edit-'+pk);
+  if(actionDiv) actionDiv.style.display='flex';
+}
+function cancelEdit(pk){
+  document.querySelectorAll('.edit-'+pk).forEach(el=>el.style.display='none');
+  document.querySelectorAll('.view-'+pk).forEach(el=>el.style.display='');
+}
+function saveParam(pk){
+  var name=document.getElementById('e_name_'+pk).value.trim();
+  var unit=document.getElementById('e_unit_'+pk).value.trim();
+  var lower=document.getElementById('e_lower_'+pk).value.trim();
+  var upper=document.getElementById('e_upper_'+pk).value.trim();
+  var defVal=(document.getElementById('e_default_'+pk)||{}).value||'';
+  var isText=document.getElementById('e_type_'+pk).value;
+  if(!name){alert('Parameter name required');return;}
+  var fd=new FormData();
+  fd.append('action','edit_param');
+  fd.append('param_pk',pk);
+  fd.append('param_name',name);
+  fd.append('unit',unit);
+  fd.append('lower_limit',lower);
+  fd.append('upper_limit',upper);
+  fd.append('default_value',defVal.trim());
+  fd.append('is_text',isText);
+  fd.append('csrfmiddlewaretoken','{{ csrf_token }}');
+  fetch('',{method:'POST',body:fd}).then(function(){window.location.reload();}).catch(function(){window.location.reload();});
+}
+</script>
+{% endblock %}

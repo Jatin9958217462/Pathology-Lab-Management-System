@@ -1,0 +1,86 @@
+{% extends 'lab/base.html' %}
+{% block title %}Claim Manager — IPL{% endblock %}
+{% block page_title %}Claim Manager{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'insurance_companies' %}" class="btn btn-secondary btn-sm">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+  Companies
+</a>
+{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="wb-title">🛡️ Claim Manager</div>
+      <div class="wb-sub">TPA &amp; insurance claim processing — Complete tracking from Draft to Settled</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--teal)">{{ claims|length }}</div>
+      <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px">Total Claims</div>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-hd">
+    <div><div class="card-title">All Claims</div><div class="card-sub">Go to Booking Detail → Insurance Claim button to create a new claim</div></div>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Claim No</th><th>Date</th><th>Patient</th><th>Receipt</th><th>Insurance Co</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for c in claims %}
+        <tr>
+          <td><span class="mono" style="color:var(--teal)">{{ c.claim_no }}</span></td>
+          <td style="color:var(--txt2);font-size:11px">{{ c.created_at|date:"d M Y" }}</td>
+          <td><strong>{{ c.booking.patient.full_name }}</strong></td>
+          <td><a href="{% url 'booking_detail' c.booking.pk %}" style="color:var(--blue)">{{ c.booking.receipt_id }}</a></td>
+          <td>{{ c.insurance_co.name|default:"—" }}</td>
+          <td style="font-weight:700;color:var(--teal)">₹{{ c.claim_amount }}</td>
+          <td>
+            {% if c.status == 'settled' %}<span class="badge b-green">✓ Settled</span>
+            {% elif c.status == 'approved' %}<span class="badge b-teal">✓ Approved</span>
+            {% elif c.status == 'submitted' %}<span class="badge b-blue">📤 Submitted</span>
+            {% elif c.status == 'under_review' %}<span class="badge b-yellow">🔍 Under Review</span>
+            {% elif c.status == 'rejected' %}<span class="badge" style="background:var(--red-l);color:var(--red)">✗ Rejected</span>
+            {% else %}<span class="badge" style="background:var(--surface2);color:var(--txt2)">Draft</span>{% endif %}
+          </td>
+          <td><a href="{% url 'insurance_claim_detail' c.pk %}" class="btn btn-secondary btn-xs">View →</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" style="text-align:center;padding:48px 20px">
+          <div style="font-size:32px;margin-bottom:10px">🛡️</div>
+          <div style="color:var(--txt2);font-size:13px;font-weight:600">No claims yet</div>
+          <div style="color:var(--txt3);font-size:11px;margin-top:4px">Go to Booking Detail → Insurance Claim button to create a new claim</div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+  <div class="card">
+    <div class="card-hd"><div class="card-title">📋 Claim Status Flow</div></div>
+    <div style="padding:15px">
+      <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;gap:4px">
+        <span style="background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:var(--txt3)">Draft</span>
+        <span style="color:var(--txt3)">→</span>
+        <span style="background:var(--blue-l);border:1px solid rgba(56,139,253,.2);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:var(--blue)">Submitted</span>
+        <span style="color:var(--txt3)">→</span>
+        <span style="background:var(--yellow-l);border:1px solid rgba(210,153,34,.2);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:var(--yellow)">Under Review</span>
+        <span style="color:var(--txt3)">→</span>
+        <span style="background:var(--teal-l);border:1px solid rgba(0,184,169,.2);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:var(--teal)">Approved</span>
+        <span style="color:var(--txt3)">→</span>
+        <span style="background:var(--green-l);border:1px solid rgba(63,185,80,.2);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;color:var(--green)">Settled</span>
+      </div>
+      <p style="font-size:11px;color:var(--txt3);margin-top:12px">Create claim → Submit to TPA → Review → Approval → Final Settlement</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd"><div class="card-title">🏢 Insurance Companies / TPA</div></div>
+    <div style="padding:15px">
+      <p style="font-size:12px;color:var(--txt2);margin-bottom:12px">Manage TPA and insurance companies like Star Health, ICICI Lombard, Medi Assist here.</p>
+      <a href="{% url 'insurance_companies' %}" class="btn btn-primary btn-sm">Manage Companies →</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

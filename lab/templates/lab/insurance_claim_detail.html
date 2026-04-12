@@ -1,0 +1,73 @@
+{% extends 'lab/base.html' %}
+{% block title %}{{ claim.claim_no }} — Insurance Claim{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">🏥 {{ claim.claim_no }}</h1>
+  <div class="page-actions">
+    <a href="{% url 'insurance_claims' %}" class="btn btn-outline">← Back to Claims</a>
+  </div>
+</div>
+
+<div class="grid-2">
+<div class="card">
+  <div class="card-header"><span class="card-title">Claim Details</span></div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update">
+      <div class="form-group"><label>Policy Number</label>
+        <input type="text" name="policy_number" class="form-control" value="{{ claim.policy_number }}"></div>
+      <div class="form-group"><label>Member ID</label>
+        <input type="text" name="member_id" class="form-control" value="{{ claim.member_id }}"></div>
+      <div class="form-group"><label>Remarks</label>
+        <textarea name="remarks" class="form-control" rows="3">{{ claim.remarks }}</textarea></div>
+      <button class="btn btn-primary">Save</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><span class="card-title">Booking Info</span></div>
+  <div class="card-body">
+    <div class="info-row"><span class="info-label">Patient</span><span>{{ claim.booking.patient.full_name }}</span></div>
+    <div class="info-row"><span class="info-label">Receipt</span><span><a href="{% url 'booking_detail' claim.booking.pk %}">{{ claim.booking.receipt_id }}</a></span></div>
+    <div class="info-row"><span class="info-label">Insurance Co</span><span>{{ claim.insurance_co.name|default:"—" }}</span></div>
+    <div class="info-row"><span class="info-label">Claim Amount</span><span><strong>₹{{ claim.claim_amount }}</strong></span></div>
+    <div class="info-row"><span class="info-label">Approved Amt</span><span>₹{{ claim.approved_amount }}</span></div>
+    <div class="info-row"><span class="info-label">Status</span>
+      <span>
+        {% if claim.status == 'settled' %}<span class="badge badge-success">✓ Settled</span>
+        {% elif claim.status == 'approved' %}<span class="badge badge-success">✓ Approved</span>
+        {% elif claim.status == 'submitted' %}<span class="badge badge-blue">📤 Submitted</span>
+        {% elif claim.status == 'under_review' %}<span class="badge badge-yellow">🔍 Under Review</span>
+        {% elif claim.status == 'rejected' %}<span class="badge badge-danger">✗ Rejected</span>
+        {% else %}<span class="badge">Draft</span>{% endif %}
+      </span>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header"><span class="card-title">Actions</span></div>
+  <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+    {% if claim.status == 'draft' %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="submit">
+      <button class="btn btn-primary">📤 Submit Claim</button></form>
+    {% endif %}
+    {% if claim.status == 'submitted' %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="update">
+      <input type="hidden" name="action" value="approve">
+      <label style="color:var(--txt2);font-size:12px">Approved Amount:</label>
+      <input type="number" name="approved_amount" value="{{ claim.claim_amount }}" style="width:120px" class="form-control" step="0.01">
+      <button class="btn btn-success">✓ Approve</button></form>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="reject">
+      <button class="btn btn-danger">✗ Reject</button></form>
+    {% endif %}
+    {% if claim.status == 'approved' %}
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="settle">
+      <button class="btn btn-success">💰 Mark Settled</button></form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

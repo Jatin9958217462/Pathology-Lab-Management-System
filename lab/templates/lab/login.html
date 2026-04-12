@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Login — {{ LAB_NAME }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* ── CSS Variables / Design Tokens ──────────────────────────────────────── */
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;
+  --surface:#21262d;--border:#30363d;--border2:#444c56;
+  --teal:#00b8a9;--teal-d:#009688;--blue:#388bfd;--red:#f85149;
+  --txt:#e6edf3;--txt2:#8b949e;--txt3:#484f58;
+  --font:'Inter',system-ui,sans-serif;--display:'Rajdhani',sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+
+/* ── Body: centered flex layout ─────────────────────────────────────────── */
+body{
+  font-family:var(--font);background:var(--bg);color:var(--txt);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+
+/* ── Subtle radial gradient background ──────────────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 20% 50%,rgba(0,184,169,.05) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 20%,rgba(56,139,253,.04) 0%,transparent 55%);
+  pointer-events:none;
+}
+
+/* ── Grid pattern overlay ────────────────────────────────────────────────── */
+.grid-bg{
+  position:fixed;inset:0;
+  background-image:linear-gradient(rgba(48,54,61,.3) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(48,54,61,.3) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;
+}
+
+/* ── Main card wrapper ───────────────────────────────────────────────────── */
+.wrap{
+  display:flex;width:820px;max-width:96vw;border-radius:14px;
+  overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px var(--border);
+  position:relative;z-index:1;
+}
+
+/* ── Left panel: lab branding ────────────────────────────────────────────── */
+.left{
+  width:320px;flex-shrink:0;
+  background:linear-gradient(160deg,#0d2137 0%,#0a1f2e 50%,#0d1a17 100%);
+  padding:36px 28px;display:flex;flex-direction:column;
+  border-right:1px solid rgba(0,184,169,.15);
+}
+.logo-wrap{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+.logo-icon{
+  width:48px;height:48px;border-radius:12px;
+  background:linear-gradient(135deg,var(--teal),var(--blue));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 24px rgba(0,184,169,.35);
+}
+.logo-icon svg{width:24px;height:24px;color:#fff;}
+.logo-name{font-family:var(--display);font-size:20px;font-weight:700;color:var(--txt);line-height:1.1;}
+.logo-sub{font-size:9px;color:rgba(230,237,243,.4);text-transform:uppercase;letter-spacing:1px;}
+.lab-info{
+  font-size:10px;color:rgba(230,237,243,.45);line-height:1.8;margin-bottom:24px;
+  border-left:2px solid rgba(0,184,169,.3);padding-left:10px;
+}
+
+/* ── Feature highlights ──────────────────────────────────────────────────── */
+.feat{display:flex;flex-direction:column;gap:8px;flex:1;}
+.feat-item{display:flex;align-items:center;gap:8px;font-size:10px;color:rgba(230,237,243,.55);}
+.feat-dot{
+  width:22px;height:22px;border-radius:6px;
+  background:rgba(0,184,169,.1);border:1px solid rgba(0,184,169,.2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.feat-dot svg{width:11px;height:11px;color:var(--teal);}
+
+/* ── "Visit Website" button on left panel ────────────────────────────────── */
+.visit-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:20px;padding:8px 14px;border-radius:8px;
+  background:rgba(0,184,169,.1);border:1px solid rgba(0,184,169,.25);
+  color:var(--teal);font-size:11px;font-weight:600;text-decoration:none;
+  transition:all .2s;
+}
+.visit-btn:hover{background:rgba(0,184,169,.2);border-color:var(--teal);}
+.visit-btn svg{width:13px;height:13px;}
+
+/* ── Right panel: login form ─────────────────────────────────────────────── */
+.right{flex:1;background:var(--bg2);padding:36px 32px;}
+.rp-title{font-family:var(--display);font-size:22px;font-weight:700;color:var(--txt);margin-bottom:3px;}
+.rp-sub{font-size:12px;color:var(--txt2);margin-bottom:24px;}
+
+/* ── Form elements ───────────────────────────────────────────────────────── */
+.fg{margin-bottom:13px;}
+.fl{display:block;font-size:11px;font-weight:600;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;}
+.fc{
+  width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:7px;font-family:var(--font);font-size:13px;color:var(--txt);
+  outline:none;transition:border .2s;
+}
+.fc:focus{border-color:var(--teal);}
+.fc::placeholder{color:var(--txt3);}
+
+/* ── Login button ────────────────────────────────────────────────────────── */
+.btn-login{
+  width:100%;padding:10px;border-radius:7px;border:none;cursor:pointer;
+  font-size:14px;font-weight:600;font-family:var(--font);
+  background:var(--teal);color:#fff;transition:all .2s;margin-top:6px;
+}
+.btn-login:hover{background:var(--teal-d);filter:brightness(1.1);}
+
+/* ── Error alert ─────────────────────────────────────────────────────────── */
+.alert{
+  padding:8px 11px;border-radius:6px;font-size:12px;margin-bottom:12px;
+  background:rgba(248,81,73,.1);color:var(--red);border:1px solid rgba(248,81,73,.2);
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+.div{display:flex;align-items:center;gap:8px;margin:14px 0;color:var(--txt3);font-size:11px;}
+.div::before,.div::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── Register / website links ────────────────────────────────────────────── */
+.reg-link{text-align:center;font-size:12px;color:var(--txt2);}
+.reg-link a{color:var(--teal);font-weight:600;text-decoration:none;}
+.reg-link a:hover{text-decoration:underline;}
+
+/* ── Website link button (right panel) ──────────────────────────────────── */
+.website-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;margin-top:10px;padding:9px;border-radius:7px;
+  background:transparent;border:1px solid var(--border2);
+  color:var(--txt2);font-size:12px;font-weight:500;text-decoration:none;
+  transition:all .2s;font-family:var(--font);cursor:pointer;
+}
+.website-btn:hover{border-color:var(--teal);color:var(--teal);}
+.website-btn svg{width:14px;height:14px;}
+
+/* ── Version badge ───────────────────────────────────────────────────────── */
+.version-badge{
+  text-align:center;font-size:10px;color:var(--txt3);margin-top:16px;
+}
+
+/* ── Mobile responsive ───────────────────────────────────────────────────── */
+@media(max-width:640px){
+  body{align-items:flex-start;padding:16px 0;}
+  .wrap{flex-direction:column;width:100%;max-width:100%;border-radius:0;box-shadow:none;}
+  .left{width:100%;padding:20px 20px 16px;flex-direction:row;flex-wrap:wrap;gap:10px;border-right:none;border-bottom:1px solid rgba(0,184,169,.15);}
+  .logo-wrap{margin-bottom:0;flex:1;min-width:180px;}
+  .lab-info{margin-bottom:0;font-size:9px;flex:1;min-width:160px;}
+  .feat{display:none;}
+  .visit-btn{display:none;}
+  .right{padding:20px 20px 32px;}
+  .rp-title{font-size:18px;}
+}
+</style>
+</head>
+<body>
+<!-- ── Grid background pattern ── -->
+<div class="grid-bg"></div>
+
+<!-- ── Main login card ── -->
+<div class="wrap">
+
+  <!-- ────────────────────────────────────────────────────────────────────────
+       LEFT PANEL — Lab branding, features, website link
+       ──────────────────────────────────────────────────────────────────────── -->
+  <div class="left">
+
+    <!-- Lab logo + name -->
+    <div class="logo-wrap">
+      <div class="logo-icon" style="overflow:hidden;padding:0;">
+        {% if LAB and LAB.logo_image %}
+          <img src="{{ LAB.logo_image.url }}" alt="logo" style="width:48px;height:48px;object-fit:cover;border-radius:12px;">
+        {% else %}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2"/>
+            <path d="M8.5 2h7"/>
+          </svg>
+        {% endif %}
+      </div>
+      <div>
+        <div class="logo-name">{{ LAB_NAME }}</div>
+        <div class="logo-sub">{{ APP_VERSION }}</div>
+      </div>
+    </div>
+
+    <!-- Lab contact info -->
+    <div class="lab-info">
+      {% if LAB %}
+        {{ LAB.address|linebreaksbr }}<br>
+        📱 {{ LAB.phone }}<br>
+        ✉️ {{ LAB.email }}
+      {% else %}
+        Contact your lab administrator
+      {% endif %}
+    </div>
+
+    <!-- Feature highlights -->
+    <div class="feat">
+      {% if LAB %}
+      <div class="feat-item">
+        <div class="feat-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/></svg></div>
+        {{ LAB.tagline }}
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        {{ LAB.unit_text }}
+      </div>
+      {% endif %}
+      <div class="feat-item">
+        <div class="feat-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        Automated Haematology Analyser
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg></div>
+        Automated Biochemistry Analyser
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
+        AI-Powered Report Interpretation
+      </div>
+      <div class="feat-item">
+        <div class="feat-dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        Digital Reports with QR Verification
+      </div>
+    </div>
+
+    <!-- Visit website button — goes to public landing page -->
+    <a href="{% url 'landing_page' %}" class="visit-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Visit Our Website
+    </a>
+
+  </div><!-- /left -->
+
+
+  <!-- ────────────────────────────────────────────────────────────────────────
+       RIGHT PANEL — Login form
+       ──────────────────────────────────────────────────────────────────────── -->
+  <div class="right">
+    <div class="rp-title">Welcome Back</div>
+    <div class="rp-sub">Sign in to {{ LAB_NAME }} Management System</div>
+
+    <!-- Display login error messages if any -->
+    {% if messages %}
+      {% for m in messages %}
+        <div class="alert">⚠️ {{ m }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Login form — POST to same URL, handled by Django auth view -->
+    <form method="post">
+      {% csrf_token %}
+      <div class="fg">
+        <label class="fl">Username / Mobile</label>
+        <input class="fc" name="username" placeholder="Enter username or mobile number" required autofocus>
+      </div>
+      <div class="fg">
+        <label class="fl">Password</label>
+        <input class="fc" name="password" type="password" placeholder="Enter password" required>
+      </div>
+      <button class="btn-login" type="submit">Sign In →</button>
+    </form>
+
+    <div class="div">or</div>
+
+    <!-- Patient self-registration link -->
+    <div class="reg-link">
+      New patient? <a href="{% url 'register' %}">Create account</a>
+    </div>
+
+    <!-- Landing page link for public visitors -->
+    <a href="{% url 'landing_page' %}" class="website-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Visit Our Public Website
+    </a>
+
+    <!-- App version -->
+    <div class="version-badge">{{ APP_VERSION }} &nbsp;·&nbsp; PathLab Management System</div>
+
+  </div><!-- /right -->
+
+</div><!-- /wrap -->
+</body>
+</html>

@@ -1,0 +1,95 @@
+{% extends 'lab/base.html' %}
+{% block title %}ConnectBridge — IPL{% endblock %}
+{% block page_title %}ConnectBridge{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'lab_settings' %}" class="btn btn-secondary btn-sm">Configure HIS →</a>
+{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="wb-title">🔗 ConnectBridge</div>
+      <div class="wb-sub">HL7 v2.5 &amp; FHIR R4 — Seamless integration with Hospital Information Systems</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--teal)">{{ logs|length }}</div>
+      <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px">Messages Logged</div>
+    </div>
+  </div>
+</div>
+
+{% if not logs %}
+<div style="background:rgba(163,113,247,.08);border:1px solid rgba(163,113,247,.2);border-radius:var(--r2);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--purple);flex-shrink:0"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+  <span style="font-size:12px;color:var(--purple)"><strong>Configure HIS Endpoint:</strong> <a href="{% url 'lab_settings' %}" style="color:var(--purple)">Lab Settings → ConnectBridge</a> — Use the "FHIR" button on Report View to send HL7 messages.</span>
+</div>
+{% endif %}
+
+<!-- Protocol cards -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+  <div class="card" style="padding:15px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(163,113,247,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" style="width:16px;height:16px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--txt)">HL7 v2.5 ORU^R01</div>
+        <div style="font-size:10px;color:var(--txt3)">Lab result transmission to HIS</div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--txt2)">Report View → FHIR button → Sends an HL7 message to the HIS endpoint via POST. ACK responses are saved in the log.</p>
+  </div>
+  <div class="card" style="padding:15px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--teal-l);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:16px;height:16px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--txt)">FHIR R4 DiagnosticReport</div>
+        <div style="font-size:10px;color:var(--txt3)">Modern REST API — JSON format</div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--txt2)">Report View → FHIR button → Download JSON file. Exports DiagnosticReport + Observations in FHIR Bundle format.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-hd">
+    <div><div class="card-title">Integration Log</div><div class="card-sub">Inbound &amp; outbound HL7/FHIR messages</div></div>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Time</th><th>Type</th><th>Direction</th><th>Patient</th><th>Report</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="font-size:11px;color:var(--txt2);white-space:nowrap">{{ log.created_at|date:"d M Y H:i" }}</td>
+          <td><span class="mono" style="font-size:10px;background:var(--surface2);padding:2px 6px;border-radius:3px">{{ log.msg_type }}</span></td>
+          <td>
+            {% if log.direction == 'outbound' %}
+            <span class="badge b-blue">→ Outbound</span>
+            {% else %}
+            <span class="badge b-green">← Inbound</span>
+            {% endif %}
+          </td>
+          <td>{{ log.patient.full_name|default:"—" }}</td>
+          <td>{% if log.report %}<span class="mono" style="font-size:11px;color:var(--teal)">{{ log.report.report_id }}</span>{% else %}—{% endif %}</td>
+          <td>
+            {% if log.status == 'ack' %}<span class="badge b-green">✓ ACK</span>
+            {% elif log.status == 'error' %}<span class="badge" style="background:var(--red-l);color:var(--red)" title="{{ log.error_detail }}">✗ Error</span>
+            {% else %}<span class="badge b-yellow">⏳ Sent</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:48px 20px">
+          <div style="font-size:32px;margin-bottom:10px">🔗</div>
+          <div style="color:var(--txt2);font-size:13px;font-weight:600">No HL7/FHIR messages sent yet</div>
+          <div style="color:var(--txt3);font-size:11px;margin-top:4px">Configure the HIS endpoint, then use the FHIR button on Report View</div>
+          <a href="{% url 'lab_settings' %}" class="btn btn-primary btn-sm" style="margin-top:12px">Configure HIS →</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

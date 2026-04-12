@@ -1,0 +1,162 @@
+{% extends 'lab/base.html' %}
+{% block title %}Search{% endblock %}
+{% block page_title %}Advanced Search{% endblock %}
+{% block extra_head %}
+<style>
+@media(max-width:640px){
+  .frow,.frow3{grid-template-columns:1fr;}
+  .tw table{min-width:480px;}
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="fpanel">
+  <div class="fpanel-hd"><div class="fpanel-title">🔍 Search Patients & Reports</div></div>
+  <div class="fpanel-body">
+    <form method="get">
+      <div class="frow3">
+        <div class="fg">
+          <label class="fl">Search Text</label>
+          <input class="fc" name="q" value="{{ q }}" placeholder="Name, ID, mobile, test...">
+        </div>
+        <div class="fg">
+          <label class="fl">Date From</label>
+          <input class="fc" type="date" name="date_from" value="{{ date_from }}">
+        </div>
+        <div class="fg">
+          <label class="fl">Date To</label>
+          <input class="fc" type="date" name="date_to" value="{{ date_to }}">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <a href="{% url 'advanced_search' %}" class="btn btn-secondary">Clear</a>
+        <button type="submit" class="btn btn-primary">Search</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if patients or reports %}
+<!-- Patients Results -->
+{% if patients %}
+<div class="card mb4">
+  <div class="card-hd">
+    <div><div class="card-title">Patients Found</div><div class="card-sub">{{ patients|length }} result(s)</div></div>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Age/Sex</th><th>Mobile</th><th>Registered</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for pt in patients %}
+      <tr>
+        <td><span class="mono">{{ pt.patient_id }}</span></td>
+        <td><strong>{{ pt.full_name }}</strong></td>
+        <td style="color:var(--txt2)">{{ pt.age }} yr / {{ pt.gender }}</td>
+        <td style="font-family:var(--mono);font-size:11px">{{ pt.mobile }}</td>
+        <td style="font-size:11px;color:var(--txt3)">{{ pt.registered_at|date:"d M Y" }}</td>
+        <td>
+          <div style="display:flex;gap:4px">
+            <a href="{% url 'booking_new_pt' pt.pk %}" class="btn btn-primary btn-xs">+ Book</a>
+            <!-- Bulk print all reports for this patient -->
+            <a href="{% url 'bulk_report_pdf' %}?{% for r in pt.reports.all %}ids={{ r.pk }}&{% endfor %}" target="_blank" class="btn btn-blue btn-xs">All Reports PDF</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Reports Results -->
+{% if reports %}
+<div class="card">
+  <div class="card-hd">
+    <div><div class="card-title">Reports Found</div><div class="card-sub">{{ reports|length }} result(s)</div></div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span style="font-size:11px;color:var(--txt3)">Select & print:</span>
+      <button class="btn btn-blue btn-sm no-print" onclick="bulkPDF()">📄 Selected PDF</button>
+      <button class="btn btn-secondary btn-sm no-print" onclick="bulkPrint()">🖨 Selected Print</button>
+    </div>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th><input type="checkbox" id="chk-all" onchange="toggleAll(this)" style="accent-color:var(--teal)"></th><th>Report ID</th><th>Patient</th><th>Test</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for rpt in reports %}
+      <tr>
+        <td><input type="checkbox" class="rpt-chk" value="{{ rpt.pk }}" style="accent-color:var(--teal)"></td>
+        <td><span class="mono">{{ rpt.report_id }}</span></td>
+        <td><strong>{{ rpt.booking.patient.full_name }}</strong><br><span style="font-size:10px;color:var(--txt3)">{{ rpt.booking.patient.patient_id }}</span></td>
+        <td style="font-size:12px">{{ rpt.test.name }}</td>
+        <td style="font-size:11px;color:var(--txt3)">{{ rpt.report_date|date:"d M Y" }}</td>
+        <td>{% if rpt.is_finalized %}<span class="badge b-green">✓ Final</span>{% else %}<span class="badge b-yellow">Pending</span>{% endif %}</td>
+        <td>
+          <div style="display:flex;gap:3px">
+            <a href="{% url 'report_view' rpt.pk %}" class="btn btn-secondary btn-xs">View</a>
+            <a href="{% url 'report_pdf' rpt.pk %}" target="_blank" class="btn btn-blue btn-xs">PDF</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if tests %}
+<div class="card" style="margin-top:12px">
+  <div class="card-hd"><div class="card-title">🧪 Tests / Rate List</div><div class="card-sub">{{ tests|length }} test(s) matching "{{ q }}"</div></div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="border-bottom:1px solid var(--border)">
+      <th style="padding:7px 14px;text-align:left;color:var(--txt2);font-weight:600">Test Name</th>
+      <th style="padding:7px 14px;text-align:left;color:var(--txt2);font-weight:600">Category</th>
+      <th style="padding:7px 14px;text-align:left;color:var(--txt2);font-weight:600">Sample</th>
+      <th style="padding:7px 14px;text-align:right;color:var(--txt2);font-weight:600">Price</th>
+      <th style="padding:7px 14px;text-align:center;color:var(--txt2);font-weight:600">TAT</th>
+    </tr></thead>
+    <tbody>
+    {% for t in tests %}
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:6px 14px;color:var(--txt);font-weight:500">{{ t.name }}</td>
+      <td style="padding:6px 14px;color:var(--txt2)">{{ t.category }}</td>
+      <td style="padding:6px 14px"><span style="background:var(--surface2);color:var(--txt2);padding:2px 7px;border-radius:4px;font-size:11px">{{ t.sample }}</span></td>
+      <td style="padding:6px 14px;text-align:right;color:var(--teal);font-family:var(--mono);font-weight:700">₹{{ t.price }}/=</td>
+      <td style="padding:6px 14px;text-align:center;color:var(--txt3);font-size:11px">{{ t.tat|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% elif q or date_from or date_to %}
+<div class="card" style="text-align:center;padding:36px;color:var(--txt3)">
+  <div style="font-size:32px;margin-bottom:10px">🔍</div>
+  No results found for your search.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleAll(cb){
+  document.querySelectorAll('.rpt-chk').forEach(c => c.checked = cb.checked);
+}
+function getSelected(){
+  return [...document.querySelectorAll('.rpt-chk:checked')].map(c=>c.value);
+}
+function bulkPDF(){
+  const ids = getSelected();
+  if(!ids.length){ alert('Select at least one report.'); return; }
+  window.open('{% url "bulk_report_pdf" %}?' + ids.map(id=>'ids='+id).join('&'), '_blank');
+}
+function bulkPrint(){
+  const ids = getSelected();
+  if(!ids.length){ alert('Select at least one report.'); return; }
+  window.open('{% url "bulk_report_print" %}?' + ids.map(id=>'ids='+id).join('&'), '_blank');
+}
+</script>
+{% endblock %}

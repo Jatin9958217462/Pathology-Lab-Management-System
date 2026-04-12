@@ -1,0 +1,575 @@
+{% extends 'lab/base.html' %}
+{% load lab_tags %}
+{% block title %}Lab Settings{% endblock %}
+{% block page_title %}Lab Settings{% endblock %}
+{% block extra_head %}
+<style>
+.stab-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:0;}
+.stab{padding:8px 16px;border-radius:8px 8px 0 0;font-size:12px;font-weight:600;cursor:pointer;color:var(--txt2);border:none;background:transparent;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;}
+.stab.active{color:var(--teal);border-bottom-color:var(--teal);background:rgba(0,184,169,.06);}
+.stab:hover:not(.active){color:var(--txt);background:var(--surface2);}
+.stab-pane{display:none;}.stab-pane.active{display:block;}
+@media(max-width:640px){
+  .frow3{grid-template-columns:1fr 1fr;}
+  .grid2{grid-template-columns:1fr!important;}
+  .stab{font-size:11px;padding:6px 10px;}
+}
+</style>
+{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'pro_suite_logout' %}" class="btn btn-secondary btn-sm">🔒 Lock Pro Suite</a>
+{% endblock %}
+{% block content %}
+<form method="post" action="{% url 'lab_settings_save' %}" enctype="multipart/form-data">
+{% csrf_token %}
+
+<!-- ── Tab Bar ── -->
+<div class="stab-bar">
+  <button type="button" class="stab active" onclick="switchTab('tab-identity')">🏷️ Lab Info</button>
+  <button type="button" class="stab" onclick="switchTab('tab-branding')">🖼️ Branding</button>
+  <button type="button" class="stab" onclick="switchTab('tab-print')">🖨️ Print & PDF</button>
+  <button type="button" class="stab" onclick="switchTab('tab-sms')">💬 SMS / WhatsApp</button>
+  <button type="button" class="stab" onclick="switchTab('tab-payment')">💳 Payments</button>
+  <button type="button" class="stab" onclick="switchTab('tab-integrations')">🔗 Integrations</button>
+  <button type="button" class="stab" onclick="switchTab('tab-landing')">🌐 Landing Page</button>
+  <button type="button" class="stab" onclick="switchTab('tab-security')">🔐 Security</button>
+  <button type="button" class="stab" onclick="switchTab('tab-database')">🗄️ Database & Sync</button>
+</div>
+
+<!-- ══════════ TAB 1: Lab Identity ══════════ -->
+<div class="stab-pane active" id="tab-identity">
+  <div class="grid2" style="align-items:start">
+    <div class="fpanel">
+      <div class="fpanel-hd"><div class="fpanel-title">🏥 Lab Details</div></div>
+      <div class="fpanel-body">
+        <div class="fg"><label class="fl">Lab Name <span style="color:var(--red)">*</span></label>
+          <input class="fc" name="lab_name" value="{{ settings.lab_name }}" required></div>
+        <div class="fg"><label class="fl">Tagline (shown in PDF header)</label>
+          <input class="fc" name="tagline" value="{{ settings.tagline }}" placeholder="e.g. AN ISO 9001:2015 CERTIFIED LAB"></div>
+        <div class="fg"><label class="fl">Unit Text</label>
+          <input class="fc" name="unit_text" value="{{ settings.unit_text }}" placeholder="e.g. A Unit of PMEGP Govt. of India"></div>
+        <div class="fg"><label class="fl">Email</label>
+          <input class="fc" name="email" type="email" value="{{ settings.email }}"></div>
+        <div class="fg"><label class="fl">Phone</label>
+          <input class="fc" name="phone" value="{{ settings.phone }}"></div>
+        <div class="fg"><label class="fl">Address</label>
+          <textarea class="fc" name="address" rows="3">{{ settings.address }}</textarea></div>
+      </div>
+    </div>
+    <div class="fpanel">
+      <div class="fpanel-hd"><div class="fpanel-title">👨‍⚕️ Report Signatories</div></div>
+      <div class="fpanel-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="fg"><label class="fl">Signatory 1 — Name</label><input class="fc" name="signer1_name" value="{{ settings.signer1_name }}"></div>
+          <div class="fg"><label class="fl">Signatory 1 — Designation</label><textarea class="fc" name="signer1_qual" rows="2">{{ settings.signer1_qual }}</textarea></div>
+          <div class="fg"><label class="fl">Signatory 2 — Name</label><input class="fc" name="signer2_name" value="{{ settings.signer2_name }}"></div>
+          <div class="fg"><label class="fl">Signatory 2 — Designation</label><textarea class="fc" name="signer2_qual" rows="2">{{ settings.signer2_qual }}</textarea></div>
+          <div class="fg"><label class="fl">Signatory 3 — Name</label><input class="fc" name="signer3_name" value="{{ settings.signer3_name }}"></div>
+          <div class="fg"><label class="fl">Signatory 3 — Designation</label><textarea class="fc" name="signer3_qual" rows="2">{{ settings.signer3_qual }}</textarea></div>
+          <div class="fg"><label class="fl">Signatory 4 — Name</label><input class="fc" name="signer4_name" value="{{ settings.signer4_name }}"></div>
+          <div class="fg"><label class="fl">Signatory 4 — Designation</label><textarea class="fc" name="signer4_qual" rows="2">{{ settings.signer4_qual }}</textarea></div>
+        </div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:6px">These names appear in the footer of PDF reports.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 2: Branding ══════════ -->
+<div class="stab-pane" id="tab-branding">
+  <div class="grid2" style="align-items:start">
+    <div>
+      <div class="fpanel">
+        <div class="fpanel-hd"><div class="fpanel-title">🖼️ Logo & Header</div></div>
+        <div class="fpanel-body">
+          <div class="fg">
+            <label class="fl">Lab Logo</label>
+            {% if settings.logo_image %}<img src="{{ settings.logo_image.url }}" style="height:50px;display:block;margin-bottom:6px;border-radius:6px"><label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt2)"><input type="checkbox" name="clear_logo_image"> Remove logo</label>{% endif %}
+            <input class="fc" type="file" name="logo_image" accept="image/*" style="margin-top:5px">
+            <div style="font-size:10px;color:var(--txt3);margin-top:3px">Shown in PDF header. PNG with transparent background recommended.</div>
+          </div>
+          <div class="fg">
+            <label class="fl">Print Header / Letterhead Image <span style="font-size:10px;color:var(--teal)">(Direct Print only)</span></label>
+            {% if settings.letterhead_image %}<img src="{{ settings.letterhead_image.url }}" style="width:100%;max-height:80px;object-fit:cover;display:block;margin-bottom:6px;border-radius:6px;border:1px solid var(--border)"><label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt2)"><input type="checkbox" name="clear_letterhead_image"> Remove</label>{% endif %}
+            <input class="fc" type="file" name="letterhead_image" accept="image/*" style="margin-top:5px">
+            <div style="font-size:10px;color:var(--txt3);margin-top:3px">Shown in Direct Print (with letterhead). Physical letterhead paper ke liye.</div>
+          </div>
+          <div class="fg">
+            <label class="fl">PDF Header Image <span style="font-size:10px;color:var(--blue)">(PDF &amp; Bulk PDF only)</span></label>
+            {% if settings.pdf_header_image %}<img src="{{ settings.pdf_header_image.url }}" style="width:100%;max-height:80px;object-fit:cover;display:block;margin-bottom:6px;border-radius:6px;border:1px solid var(--border)"><label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt2)"><input type="checkbox" name="clear_pdf_header_image"> Remove</label>{% endif %}
+            <input class="fc" type="file" name="pdf_header_image" accept="image/*" style="margin-top:5px">
+            <div style="font-size:10px;color:var(--txt3);margin-top:3px">Shown at top of PDF &amp; Bulk PDF. Direct Print mein nahi aayega.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="fpanel">
+        <div class="fpanel-hd"><div class="fpanel-title">✍️ Signature Images</div></div>
+        <div class="fpanel-body">
+          <div class="fg" style="margin-bottom:12px">
+            <label class="fl">Signature Image Height (px)</label>
+            <input class="fc" type="number" name="signer_image_height" value="{{ settings.signer_image_height }}" min="10" max="80" style="max-width:120px">
+            <div style="font-size:10px;color:var(--txt3);margin-top:3px">Signature images ki height control karein — PDF aur Print dono mein. Default: 30px. Range: 10–80px.</div>
+          </div>
+          <div class="fg" style="margin-bottom:12px">
+            <label class="fl">📝 Report Font Size (pt)</label>
+            <input class="fc" type="number" name="report_font_size" value="{{ settings.report_font_size }}" min="8" max="20" style="max-width:120px">
+            <div style="font-size:10px;color:var(--txt3);margin-top:3px">Print aur PDF report mein text ka size. Default: 12pt. Range: 8–20pt. (Chota: 10pt, Normal: 12pt, Bada: 14pt)</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            {% for sig_field, sig_name in sig_fields %}
+            <div class="fg">
+              <label class="fl">{{ sig_name }}</label>
+              {% with sig_val=settings|get_attr:sig_field %}
+              {% if sig_val %}<img src="{{ sig_val.url }}" style="height:{{ settings.signer_image_height }}px;display:block;margin-bottom:4px;border:1px solid var(--border);border-radius:4px"><label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--txt2)"><input type="checkbox" name="clear_{{ sig_field }}"> Remove</label>{% endif %}
+              {% endwith %}
+              <input class="fc" type="file" name="{{ sig_field }}" accept="image/*" style="margin-top:4px">
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="fpanel" style="margin-top:12px">
+        <div class="fpanel-hd"><div class="fpanel-title">🖼️ Footer Images</div></div>
+        <div class="fpanel-body">
+          <div class="fg">
+            <label class="fl">Footer Letterhead Image <span style="font-size:10px;color:var(--blue)">(PDF &amp; Bulk PDF only)</span></label>
+            {% if settings.footer_image %}<img src="{{ settings.footer_image.url }}" style="width:100%;max-height:60px;object-fit:cover;display:block;margin-bottom:6px;border-radius:6px;border:1px solid var(--border)"><label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--txt2)"><input type="checkbox" name="clear_footer_image"> Remove</label>{% endif %}
+            <input class="fc" type="file" name="footer_image" accept="image/*" style="margin-top:5px">
+            <div style="font-size:10px;color:var(--txt3);margin-top:3px">Shown at the bottom of PDF &amp; Bulk PDF only. Direct Print mein nahi aayega.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 3: Print & PDF ══════════ -->
+<div class="stab-pane" id="tab-print">
+  <div class="fpanel">
+    <div class="fpanel-hd"><div class="fpanel-title">📄 PDF Footer Text</div></div>
+    <div class="fpanel-body">
+      <div class="fg"><textarea class="fc" name="pdf_footer_text" rows="4">{{ settings.pdf_footer_text }}</textarea></div>
+      <div class="fg">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--txt)">
+          <input type="checkbox" name="show_timing_bar" {% if settings.show_timing_bar %}checked{% endif %} style="accent-color:var(--teal);width:14px;height:14px">
+          Show timing bar in PDF header
+        </label>
+      </div>
+      <div class="fg"><label class="fl">Timing Bar Text</label>
+        <input class="fc" name="timing_text" value="{{ settings.timing_text }}"></div>
+      <div class="fg"><label class="fl">Facilities Text</label>
+        <textarea class="fc" name="facilities_text" rows="2">{{ settings.facilities_text }}</textarea></div>
+    </div>
+  </div>
+
+  <div class="card mb4" style="margin-top:14px">
+    <div class="card-hd"><div class="card-title">🖨️ Print & PDF Margin Settings</div><div class="card-sub">In pixels (px). Increase top/bottom to make space for your letterhead paper.</div></div>
+    <div style="padding:16px 20px">
+
+      <!-- Single Report -->
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px">Single Report</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">🖨️ Print Margins</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top (px)</label><input class="fc" type="number" min="0" max="500" name="print_single_margin_top" value="{{ settings.print_single_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom (px)</label><input class="fc" type="number" min="0" max="500" name="print_single_margin_bottom" value="{{ settings.print_single_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left (px)</label><input class="fc" type="number" min="0" max="200" name="print_single_margin_left" value="{{ settings.print_single_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right (px)</label><input class="fc" type="number" min="0" max="200" name="print_single_margin_right" value="{{ settings.print_single_margin_right }}"></div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">📄 PDF Margins</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top (px)</label><input class="fc" type="number" min="0" max="500" name="pdf_single_margin_top" value="{{ settings.pdf_single_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom (px)</label><input class="fc" type="number" min="0" max="500" name="pdf_single_margin_bottom" value="{{ settings.pdf_single_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left (px)</label><input class="fc" type="number" min="0" max="200" name="pdf_single_margin_left" value="{{ settings.pdf_single_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right (px)</label><input class="fc" type="number" min="0" max="200" name="pdf_single_margin_right" value="{{ settings.pdf_single_margin_right }}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk Reports -->
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px">Bulk Reports</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">🖨️ Print Margins</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top (px)</label><input class="fc" type="number" min="0" max="500" name="print_bulk_margin_top" value="{{ settings.print_bulk_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom (px)</label><input class="fc" type="number" min="0" max="500" name="print_bulk_margin_bottom" value="{{ settings.print_bulk_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left (px)</label><input class="fc" type="number" min="0" max="200" name="print_bulk_margin_left" value="{{ settings.print_bulk_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right (px)</label><input class="fc" type="number" min="0" max="200" name="print_bulk_margin_right" value="{{ settings.print_bulk_margin_right }}"></div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">📄 PDF Margins</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top (px)</label><input class="fc" type="number" min="0" max="500" name="pdf_bulk_margin_top" value="{{ settings.pdf_bulk_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom (px)</label><input class="fc" type="number" min="0" max="500" name="pdf_bulk_margin_bottom" value="{{ settings.pdf_bulk_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left (px)</label><input class="fc" type="number" min="0" max="200" name="pdf_bulk_margin_left" value="{{ settings.pdf_bulk_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right (px)</label><input class="fc" type="number" min="0" max="200" name="pdf_bulk_margin_right" value="{{ settings.pdf_bulk_margin_right }}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bill / Invoice -->
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px">Bill / Invoice</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">🖨️ Print Margins</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top (px)</label><input class="fc" type="number" min="0" max="500" name="print_bill_margin_top" value="{{ settings.print_bill_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom (px)</label><input class="fc" type="number" min="0" max="500" name="print_bill_margin_bottom" value="{{ settings.print_bill_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left (px)</label><input class="fc" type="number" min="0" max="200" name="print_bill_margin_left" value="{{ settings.print_bill_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right (px)</label><input class="fc" type="number" min="0" max="200" name="print_bill_margin_right" value="{{ settings.print_bill_margin_right }}"></div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">📄 PDF Margins</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top (px)</label><input class="fc" type="number" min="0" max="500" name="pdf_bill_margin_top" value="{{ settings.pdf_bill_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom (px)</label><input class="fc" type="number" min="0" max="500" name="pdf_bill_margin_bottom" value="{{ settings.pdf_bill_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left (px)</label><input class="fc" type="number" min="0" max="200" name="pdf_bill_margin_left" value="{{ settings.pdf_bill_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right (px)</label><input class="fc" type="number" min="0" max="200" name="pdf_bill_margin_right" value="{{ settings.pdf_bill_margin_right }}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {% comment %}Fallback inline margin inputs{% endcomment %}
+  <div class="card mb4" style="margin-top:0;display:none" id="margin-fallback">
+    <div style="padding:16px 20px">
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px">Single Report</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">🖨️ Print Margin</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top</label><input class="fc" type="number" min="0" max="500" name="print_single_margin_top" value="{{ settings.print_single_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom</label><input class="fc" type="number" min="0" max="500" name="print_single_margin_bottom" value="{{ settings.print_single_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left</label><input class="fc" type="number" min="0" max="200" name="print_single_margin_left" value="{{ settings.print_single_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right</label><input class="fc" type="number" min="0" max="200" name="print_single_margin_right" value="{{ settings.print_single_margin_right }}"></div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">📄 PDF Margin</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top</label><input class="fc" type="number" min="0" max="500" name="pdf_single_margin_top" value="{{ settings.pdf_single_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom</label><input class="fc" type="number" min="0" max="500" name="pdf_single_margin_bottom" value="{{ settings.pdf_single_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left</label><input class="fc" type="number" min="0" max="200" name="pdf_single_margin_left" value="{{ settings.pdf_single_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right</label><input class="fc" type="number" min="0" max="200" name="pdf_single_margin_right" value="{{ settings.pdf_single_margin_right }}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px">Bulk Report</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">🖨️ Print Margin</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top</label><input class="fc" type="number" name="print_bulk_margin_top" value="{{ settings.print_bulk_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom</label><input class="fc" type="number" name="print_bulk_margin_bottom" value="{{ settings.print_bulk_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left</label><input class="fc" type="number" name="print_bulk_margin_left" value="{{ settings.print_bulk_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right</label><input class="fc" type="number" name="print_bulk_margin_right" value="{{ settings.print_bulk_margin_right }}"></div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">📄 PDF Margin</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top</label><input class="fc" type="number" name="pdf_bulk_margin_top" value="{{ settings.pdf_bulk_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom</label><input class="fc" type="number" name="pdf_bulk_margin_bottom" value="{{ settings.pdf_bulk_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left</label><input class="fc" type="number" name="pdf_bulk_margin_left" value="{{ settings.pdf_bulk_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right</label><input class="fc" type="number" name="pdf_bulk_margin_right" value="{{ settings.pdf_bulk_margin_right }}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px">Bill / Receipt</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">🖨️ Print Margin</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top</label><input class="fc" type="number" name="print_bill_margin_top" value="{{ settings.print_bill_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom</label><input class="fc" type="number" name="print_bill_margin_bottom" value="{{ settings.print_bill_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left</label><input class="fc" type="number" name="print_bill_margin_left" value="{{ settings.print_bill_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right</label><input class="fc" type="number" name="print_bill_margin_right" value="{{ settings.print_bill_margin_right }}"></div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:8px">📄 PDF Margin</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div><label class="fl" style="font-size:10px">Top</label><input class="fc" type="number" name="pdf_bill_margin_top" value="{{ settings.pdf_bill_margin_top }}"></div>
+              <div><label class="fl" style="font-size:10px">Bottom</label><input class="fc" type="number" name="pdf_bill_margin_bottom" value="{{ settings.pdf_bill_margin_bottom }}"></div>
+              <div><label class="fl" style="font-size:10px">Left</label><input class="fc" type="number" name="pdf_bill_margin_left" value="{{ settings.pdf_bill_margin_left }}"></div>
+              <div><label class="fl" style="font-size:10px">Right</label><input class="fc" type="number" name="pdf_bill_margin_right" value="{{ settings.pdf_bill_margin_right }}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>document.getElementById('margin-fallback').style.display='block';</script>
+</div>
+
+<!-- ══════════ TAB 4: SMS / WhatsApp ══════════ -->
+<div class="stab-pane" id="tab-sms">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px">
+    <h3 style="font-size:13px;font-weight:600;color:var(--teal);margin-bottom:14px">💬 SMS / WhatsApp Notifications</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg"><label class="fl">SMS Provider</label>
+        <select class="fc" name="sms_provider">
+          <option value="none" {% if settings.sms_provider == 'none' %}selected{% endif %}>Disabled</option>
+          <option value="msg91" {% if settings.sms_provider == 'msg91' %}selected{% endif %}>MSG91 (India — Recommended)</option>
+          <option value="twilio" {% if settings.sms_provider == 'twilio' %}selected{% endif %}>Twilio (International)</option>
+        </select></div>
+      <div class="fg"><label class="fl">MSG91 Auth Key</label>
+        <input class="fc" name="msg91_auth_key" value="{{ settings.msg91_auth_key }}" placeholder="Enter MSG91 Auth Key"></div>
+      <div class="fg"><label class="fl">MSG91 Sender ID (6 chars, DLT)</label>
+        <input class="fc" name="msg91_sender_id" value="{{ settings.msg91_sender_id }}" placeholder="IPLABS"></div>
+      <div class="fg"><label class="fl">MSG91 Template ID</label>
+        <input class="fc" name="msg91_template_id" value="{{ settings.msg91_template_id }}" placeholder="DLT Template ID"></div>
+      <div class="fg"><label class="fl">Twilio Account SID</label>
+        <input class="fc" name="twilio_account_sid" value="{{ settings.twilio_account_sid }}"></div>
+      <div class="fg"><label class="fl">Twilio Auth Token</label>
+        <input class="fc" name="twilio_auth_token" value="{{ settings.twilio_auth_token }}" type="password"></div>
+      <div class="fg"><label class="fl">Twilio From Number</label>
+        <input class="fc" name="twilio_from_number" value="{{ settings.twilio_from_number }}" placeholder="+1234567890"></div>
+      <div class="fg" style="display:flex;align-items:center;gap:10px;padding-top:20px">
+        <input type="checkbox" name="whatsapp_enabled" id="wa_en" {% if settings.whatsapp_enabled %}checked{% endif %}>
+        <label for="wa_en" style="color:var(--txt)">Enable WhatsApp (Meta Cloud API)</label>
+      </div>
+      <div class="fg"><label class="fl">WhatsApp Access Token</label>
+        <input class="fc" name="whatsapp_token" value="{{ settings.whatsapp_token }}" type="password" placeholder="Meta Cloud API Token"></div>
+      <div class="fg"><label class="fl">WhatsApp Phone Number ID</label>
+        <input class="fc" name="whatsapp_phone_id" value="{{ settings.whatsapp_phone_id }}" placeholder="Meta Phone Number ID"></div>
+    </div>
+    <p style="font-size:11px;color:var(--txt3);margin-top:10px">💡 For MSG91: Register at <a href="https://msg91.com" target="_blank">msg91.com</a>, get DLT template approved (TRAI requirement), then add keys here.</p>
+  </div>
+</div>
+
+<!-- ══════════ TAB 5: Payments ══════════ -->
+<div class="stab-pane" id="tab-payment">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px">
+    <h3 style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:14px">💳 Online Payment Gateway (Razorpay)</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg"><label class="fl">Razorpay Key ID</label>
+        <input class="fc" name="razorpay_key_id" value="{{ settings.razorpay_key_id }}" placeholder="rzp_test_... or rzp_live_..."></div>
+      <div class="fg"><label class="fl">Razorpay Key Secret</label>
+        <input class="fc" name="razorpay_key_secret" value="{{ settings.razorpay_key_secret }}" type="password"></div>
+      <div class="fg"><label class="fl">Webhook Secret</label>
+        <input class="fc" name="razorpay_webhook_secret" value="{{ settings.razorpay_webhook_secret }}" type="password" placeholder="From Razorpay Dashboard > Webhooks"></div>
+    </div>
+    <p style="font-size:11px;color:var(--txt3);margin-top:10px">
+      💡 <a href="https://razorpay.com" target="_blank">razorpay.com</a> → Dashboard → Settings → API Keys. Use <code>rzp_test_</code> keys for test mode.<br>
+      Webhook URL: <code>https://yourdomain.com/payment/webhook/</code>
+    </p>
+  </div>
+</div>
+
+<!-- ══════════ TAB 6: Integrations ══════════ -->
+<div class="stab-pane" id="tab-integrations">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px;margin-bottom:14px">
+    <h3 style="font-size:13px;font-weight:600;color:var(--purple);margin-bottom:14px">🔗 HL7 / FHIR — Hospital Information System</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg" style="grid-column:1/-1"><label class="fl">HIS Endpoint URL (HL7 ORU^R01)</label>
+        <input class="fc" name="his_endpoint_url" value="{{ settings.his_endpoint_url }}" placeholder="http://his.hospital.com/api/hl7/receive"></div>
+      <div class="fg"><label class="fl">HIS Auth Token (Bearer)</label>
+        <input class="fc" name="his_auth_token" value="{{ settings.his_auth_token }}" type="password"></div>
+    </div>
+    <p style="font-size:11px;color:var(--txt3);margin-top:10px">💡 Once configured, use the "Send to HIS" button on Report View to send HL7 messages. FHIR JSON export is also available.</p>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px">
+    <h3 style="font-size:13px;font-weight:600;color:var(--orange);margin-bottom:14px">🤖 AI Diagnostic Interpretation</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg" style="display:flex;align-items:center;gap:10px;padding-top:8px">
+        <input type="checkbox" name="ai_auto_interpret" id="ai_auto" {% if settings.ai_auto_interpret %}checked{% endif %}>
+        <label for="ai_auto" style="color:var(--txt)">Auto-generate AI interpretation on report finalize</label>
+      </div>
+      <div class="fg"><label class="fl">OpenAI API Key (optional — for GPT-4)</label>
+        <input class="fc" name="openai_api_key" value="{{ settings.openai_api_key }}" type="password" placeholder="sk-... (leave blank for rule-based)"></div>
+    </div>
+    <p style="font-size:11px;color:var(--txt3);margin-top:10px">💡 Without an OpenAI key, rule-based interpretation works (free). For GPT-4: <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>. Run: <code>pip install openai</code></p>
+  </div>
+</div>
+
+<!-- ══════════ TAB 7: Landing Page ══════════ -->
+<div class="stab-pane" id="tab-landing">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px">
+    <h3 style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:6px">🌐 Public Landing Page</h3>
+    <p style="font-size:11px;color:var(--txt3);margin-bottom:14px">Shown at <strong>/welcome/</strong> — the public website visitors see without logging in.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div class="fg"><label class="fl">Patients Served (stat)</label>
+        <input class="fc" name="landing_patients" value="{{ settings.landing_patients }}" placeholder="5000+"></div>
+      <div class="fg"><label class="fl">Tests Available (stat)</label>
+        <input class="fc" name="landing_tests" value="{{ settings.landing_tests }}" placeholder="200+"></div>
+      <div class="fg"><label class="fl">Years Experience (stat)</label>
+        <input class="fc" name="landing_years" value="{{ settings.landing_years }}" placeholder="10+"></div>
+    </div>
+    <div class="fg"><label class="fl">About Us Text</label>
+      <textarea class="fc" name="about_text" rows="3">{{ settings.about_text }}</textarea></div>
+    <div class="fg"><label class="fl">Services Description</label>
+      <textarea class="fc" name="services_text" rows="2">{{ settings.services_text }}</textarea></div>
+    <div class="fg"><label class="fl">Feedback Email (for contact form submissions)</label>
+      <input class="fc" type="email" name="feedback_email" value="{{ settings.feedback_email }}" placeholder="yourlab@email.com"></div>
+    <div style="margin-top:8px">
+      <a href="{% url 'landing_page' %}" target="_blank" class="btn btn-secondary btn-sm">👁 Preview Landing Page</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 8: Security ══════════ -->
+<div class="stab-pane" id="tab-security">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:18px">
+    <h3 style="font-size:13px;font-weight:600;color:var(--purple);margin-bottom:6px">🔐 Pro Suite Password</h3>
+    <p style="font-size:11px;color:var(--txt3);margin-bottom:14px">
+      The Pro Suite password protects access to: Payments, Revenue, Insurance, Notifications, Branches, Analysers, Inventory, QC Log, Critical Alerts, Commissions, Lab Settings, and Staff Management.
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="fg">
+        <label class="fl">New Pro Suite Password</label>
+        <input class="fc" type="password" name="pro_suite_password" placeholder="Enter new password (leave blank to keep current)" autocomplete="new-password">
+        <div style="font-size:10px;color:var(--txt3);margin-top:3px">Leave blank to keep the current password unchanged.</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:12px 14px;background:rgba(56,139,253,.06);border:1px solid rgba(56,139,253,.15);border-radius:8px;font-size:11px;color:var(--txt2)">
+      <strong>ℹ️ Staff & Doctor Users</strong> — To add or manage staff/doctor login accounts, go to
+      <a href="{% url 'staff_list' %}" style="color:var(--teal)">Staff & Users</a> (also protected by Pro Suite password).
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB: Database & Sync ══════════ -->
+<div class="stab-pane" id="tab-database">
+
+  <!-- Current status card -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:700;color:var(--teal);margin-bottom:10px">📊 Current Database Status</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px">
+        <div style="color:var(--txt3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:10px;margin-bottom:4px">Active Database Path</div>
+        <div style="font-family:monospace;color:var(--txt);word-break:break-all;font-size:11px">{{ db_path }}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px">
+        <div style="color:var(--txt3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;font-size:10px;margin-bottom:4px">Media Folder Path</div>
+        <div style="font-family:monospace;color:var(--txt);word-break:break-all;font-size:11px">{{ media_path }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- db_path.txt editor -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px">📁 Shared Path Configuration</div>
+    <div style="font-size:11px;color:var(--txt3);margin-bottom:14px">
+      Neeche database aur media folder ka path likhein. <strong>Pendrive, network folder, ya koi bhi shared location</strong> ho sakti hai.
+      Yahan save karne ke baad <strong>server restart karna hoga</strong> tabhi naya path load hoga.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div class="fg">
+        <label class="fl">📂 Database File Path (.sqlite3)</label>
+        <input class="fc" type="text" name="db_path_line1" value="{{ db_path_config_line1 }}"
+          placeholder="e.g. E:\pathlab_data\db.sqlite3  ya  /mnt/pendrive/db.sqlite3">
+        <div style="font-size:10px;color:var(--txt3);margin-top:3px">Khali rakhne par default project folder mein db.sqlite3 use hoga.</div>
+      </div>
+      <div class="fg">
+        <label class="fl">🖼️ Media Folder Path (logos, signatures)</label>
+        <input class="fc" type="text" name="db_path_line2" value="{{ db_path_config_line2 }}"
+          placeholder="e.g. E:\pathlab_data\media  ya  /mnt/pendrive/media">
+        <div style="font-size:10px;color:var(--txt3);margin-top:3px">Khali rakhne par default project folder mein media/ use hoga.</div>
+      </div>
+    </div>
+    <div style="background:rgba(0,184,169,.08);border:1px solid rgba(0,184,169,.25);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--txt2)">
+      ✅ <strong>Save karte hi turant switch ho jayega</strong> — server restart ki zaroorat nahi.
+      Naya path immediately active ho jayega aur sabhi nayi entries naye database mein jayengi.
+    </div>
+  </div>
+
+  <!-- Guide -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:12px">🖥️ Multi-Device / Multi-Computer Setup Guide</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;border:1px solid var(--border)">
+        <div style="font-size:18px;margin-bottom:6px">💾</div>
+        <div style="font-size:12px;font-weight:700;color:var(--teal);margin-bottom:6px">Pendrive Mein Data</div>
+        <div style="font-size:11px;color:var(--txt2);line-height:1.6">
+          1. Pendrive lagao (jaise E:)<br>
+          2. Database path set karo:<br>
+          <code style="font-size:10px;background:var(--bg);padding:1px 4px;border-radius:3px">E:\pathlab\db.sqlite3</code><br>
+          3. Save karke server restart karo<br>
+          4. Ab kisi bhi PC mein pendrive lagao — data wahi rahega
+        </div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;border:1px solid var(--border)">
+        <div style="font-size:18px;margin-bottom:6px">🌐</div>
+        <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:6px">Ek Server, Baaki Browser Se</div>
+        <div style="font-size:11px;color:var(--txt2);line-height:1.6">
+          1. Ek computer pe PathLab chalao<br>
+          2. <code style="font-size:10px;background:var(--bg);padding:1px 4px;border-radius:3px">start.bat</code> se 0.0.0.0:8000 pe chalega<br>
+          3. Dusre computers browser mein kholein:<br>
+          <code style="font-size:10px;background:var(--bg);padding:1px 4px;border-radius:3px">http://[server-ip]:8000</code><br>
+          4. Sabka data ek hi database mein
+        </div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;border:1px solid var(--border)">
+        <div style="font-size:18px;margin-bottom:6px">📁</div>
+        <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:6px">Network Folder / NAS</div>
+        <div style="font-size:11px;color:var(--txt2);line-height:1.6">
+          1. Shared folder ka path set karo:<br>
+          <code style="font-size:10px;background:var(--bg);padding:1px 4px;border-radius:3px">\\192.168.1.5\share\db.sqlite3</code><br>
+          2. Sabhi computers same path use karein<br>
+          3. ⚠️ Ek saath sirf ek hi user write kare — SQLite limitation
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Save Button ── -->
+<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;position:sticky;bottom:0;background:var(--bg);padding:10px 0;border-top:1px solid var(--border)">
+  <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+  <button type="submit" class="btn btn-primary">💾 Save All Settings</button>
+</div>
+
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.stab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  // Remember tab
+  try { localStorage.setItem('lab_settings_tab', id); } catch(e){}
+}
+
+// Restore last tab
+try {
+  const t = localStorage.getItem('lab_settings_tab');
+  if (t && document.getElementById(t)) {
+    document.querySelectorAll('.stab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+    document.getElementById(t).classList.add('active');
+    // activate corresponding button
+    document.querySelectorAll('.stab').forEach(b => {
+      if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(t)) b.classList.add('active');
+    });
+  }
+} catch(e){}
+</script>
+{% endblock %}

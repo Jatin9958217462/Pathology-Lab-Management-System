@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Bill — {{ booking.receipt_id }}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:11px;background:#fff;color:#111;}@page{size:A4;margin:{% if lab %}{% if letterhead %}{{ lab.pdf_bill_margin_top }}px {{ lab.pdf_bill_margin_right }}px {{ lab.pdf_bill_margin_bottom }}px {{ lab.pdf_bill_margin_left }}px{% else %}{{ lab.print_bill_margin_top }}px {{ lab.print_bill_margin_right }}px {{ lab.print_bill_margin_bottom }}px {{ lab.print_bill_margin_left }}px{% endif %}{% else %}100px 0 96px 0{% endif %};}@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}.no-print{display:none!important;}}
+.lh{background:linear-gradient(135deg,#0a1a5c,#1a56db,#0076a3);padding:10px 16px;display:flex;align-items:center;gap:12px;}
+.logo{width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tbar{background:#1a3a8a;color:#fff;font-size:11px;font-weight:700;padding:5px 14px;display:flex;justify-content:space-between;}
+.bw{padding:12px 14px;}
+.pr{display:flex;justify-content:space-between;margin-bottom:10px;padding:8px 12px;background:#f8f9ff;border:1px solid #dde3f5;border-radius:6px;}
+.pt{width:100%;border-collapse:collapse;margin-bottom:8px;}
+.pt thead th{background:#1a3a8a;color:#fff;padding:6px 10px;text-align:left;font-size:9px;font-weight:700;}
+.pt tbody td{padding:5px 10px;border-bottom:1px solid #f0f1f5;font-size:11px;}
+.pt tbody tr:nth-child(even) td{background:#f9fafb;}
+.tots{display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding:8px 12px;background:#f9fafb;border-top:1px solid #e5e7eb;}
+.tr{display:flex;gap:40px;font-size:11px;color:#6b7280;}
+.tg{font-size:15px;font-weight:800;color:#1a56db;border-top:2px solid #e5e7eb;padding-top:6px;margin-top:2px;}
+.fb{background:#1a56db;color:#fff;font-size:8px;font-weight:700;padding:4px 10px;text-align:center;}
+.pbtn{position:fixed;top:12px;right:12px;background:#1a56db;color:#fff;border:none;padding:9px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;z-index:100;}
+</style></head><body>
+<button class="pbtn no-print" onclick="doPrint()">🖨 Print / Save PDF</button>
+<script>
+function doPrint(){
+  var s=document.createElement('style');
+  s.id='__pfix';
+  // margin handled by @page rule
+  document.head.appendChild(s);
+  window.print();
+  setTimeout(function(){var el=document.getElementById('__pfix');if(el)el.remove();},1500);
+}
+</script>
+{% if letterhead %}
+<div class="lh">
+  <div class="logo"><div style="text-align:center"><div style="font-size:12px;font-weight:900;color:#1a56db;line-height:1">IPL</div><div style="font-size:7px;color:#0076a3;font-weight:700">PATH LAB</div></div></div>
+  <div style="flex:1;text-align:center"><div style="font-size:19px;font-weight:900;color:#fff">Indian <span style="color:#93c5fd">Path-Lab</span></div><div style="font-size:8px;color:rgba(255,255,255,.6)">AN ISO 9001:2015 CERTIFIED LAB | A UNIT OF PMEGP GOVT. OF INDIA</div></div>
+  <div style="text-align:right;font-size:9px;color:rgba(255,255,255,.7);line-height:1.7">C-451, Gali No. 5, Old Mustafabad<br>Near Tirpal Factory, DELHI-110094<br><strong style="color:#fff">9213303786, 9971404170</strong></div>
+</div>
+{% endif %}
+<div class="tbar"><span>CASH MEMO / RECEIPT</span><span>{{ booking.receipt_id }} | {{ booking.booking_date|date:"d M Y" }}</span></div>
+<div class="bw">
+  <div class="pr">
+    <div><div style="font-size:14px;font-weight:700">{{ booking.patient.salutation }} {{ booking.patient.full_name }}</div>
+    <div style="font-size:11px;color:#6b7280;margin-top:2px">ID: {{ booking.patient.patient_id }} · Age: {{ booking.patient.age }} yr / {{ booking.patient.gender }} · Mob: {{ booking.patient.mobile }}</div>
+    {% if booking.ref_doctor %}<div style="font-size:11px;color:#6b7280">Ref. Dr: {{ booking.ref_doctor.name }}</div>{% endif %}</div>
+    <div style="text-align:right"><span style="background:#def7ec;color:#057a55;padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700">PAID ✓</span><div style="font-size:10px;color:#6b7280;margin-top:5px">{{ booking.payment_mode }}</div></div>
+  </div>
+  <table class="pt"><thead><tr><th>#</th><th>Test Name</th><th>Category</th><th>Sample</th><th style="text-align:right">Price</th></tr></thead>
+  <tbody>{% for t in booking.tests.all %}<tr><td style="color:#6b7280">{{ forloop.counter }}</td><td style="font-weight:600">{{ t.name }}</td><td style="color:#6b7280">{{ t.category }}</td><td style="color:#6b7280">{{ t.sample }}</td><td style="text-align:right;font-weight:700">₹{{ t.price }}</td></tr>{% endfor %}</tbody></table>
+  <div class="tots">
+    <div class="tr"><span>Subtotal</span><span>₹{{ booking.subtotal }}</span></div>
+    {% if booking.discount_amt > 0 %}<div class="tr" style="color:#057a55"><span>Discount ({{ booking.discount_pct }}%)</span><span>−₹{{ booking.discount_amt }}</span></div>{% endif %}
+    <div class="tr tg"><span>TOTAL AMOUNT</span><span>₹{{ booking.total }}</span></div>
+    <div class="tr" style="color:#057a55"><span>Amount Paid ({{ booking.payment_mode }})</span><span>₹{{ booking.paid }}</span></div>
+    {% if booking.due > 0 %}<div class="tr" style="color:#e02424;font-weight:700"><span>Balance Due</span><span>₹{{ booking.due }}</span></div>{% endif %}
+  </div>
+</div>
+<div class="fb">Thank you for choosing Indian Path-Lab | indianpathlab@gmail.com | Timing: 9AM–9PM</div>
+</body></html>

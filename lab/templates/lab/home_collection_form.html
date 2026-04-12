@@ -1,0 +1,25 @@
+{% extends 'lab/base.html' %}
+{% block title %}Schedule Home Collection{% endblock %}
+{% block page_title %}Home Collection{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'booking_detail' booking.pk %}" class="btn btn-secondary btn-sm">← Back</a>
+{% endblock %}
+{% block content %}
+<div style="max-width:500px">
+<div class="fpanel">
+  <div class="fpanel-hd"><div class="fpanel-title">🏠 Schedule Home Collection</div><div style="font-size:11px;color:var(--txt3)">{{ booking.receipt_id }} — {{ booking.patient.full_name }}</div></div>
+  <form method="post">{% csrf_token %}
+    <div class="fpanel-body">
+      <div class="fg"><label class="fl">Collection Address <span class="req">*</span></label><textarea class="fc" name="address" rows="3" required placeholder="Full address for sample collection">{{ booking.patient.address }}</textarea></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Date <span class="req">*</span></label><input class="fc" type="date" name="scheduled_date" required></div>
+        <div class="fg"><label class="fl">Time <span class="req">*</span></label><input class="fc" type="time" name="scheduled_time" required></div>
+      </div>
+      <div class="fg"><label class="fl">Collection Fee (₹)</label><input class="fc" type="number" name="collection_fee" value="0" min="0"></div>
+      <div class="fg"><label class="fl">Remarks</label><textarea class="fc" name="remarks" rows="2"></textarea></div>
+    </div>
+    <div class="fpanel-foot"><a href="{% url 'booking_detail' booking.pk %}" class="btn btn-secondary">Cancel</a><button type="submit" class="btn btn-primary">Schedule Collection</button></div>
+  </form>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'lab/base.html' %}
+{% block title %}{{ booking.receipt_id }} — Indian Path-Lab{% endblock %}
+{% block page_title %}Booking: {{ booking.receipt_id }}{% endblock %}
+{% block extra_head %}
+<style>
+@media(max-width:640px){
+  .topbar [style*="display:flex"]{flex-wrap:wrap;}
+  .booking-actions{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+}
+@media(min-width:641px){.booking-actions{display:none;}}
+</style>
+{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'booking_new' %}" class="btn btn-secondary btn-sm no-print">← New Booking</a>
+<a href="{% url 'bill_pdf' booking.pk %}" target="_blank" class="btn btn-blue btn-sm no-print">📄 Bill PDF</a>
+<a href="{% url 'bill_print' booking.pk %}" target="_blank" class="btn btn-secondary btn-sm no-print">🖨 Bill Print</a>
+<a href="{% url 'bulk_report_pdf' %}?{% for r in reports %}ids={{ r.pk }}&{% endfor %}" target="_blank" class="btn btn-blue btn-sm no-print">📄 All Reports PDF</a>
+<a href="{% url 'bulk_report_print' %}?{% for r in reports %}ids={{ r.pk }}&{% endfor %}" target="_blank" class="btn btn-secondary btn-sm no-print">🖨 All Reports Print</a>
+{% if booking.due > 0 %}
+<button onclick="initRazorpay({{ booking.pk }})" class="btn btn-sm no-print" style="background:var(--green-l);color:var(--green);border:1px solid var(--green)">💳 Pay Online ₹{{ booking.due }}</button>
+{% endif %}
+<a href="{% url 'insurance_claim_new' booking.pk %}" class="btn btn-sm no-print" style="background:var(--blue-l);color:var(--blue);border:1px solid var(--blue)">🏥 Insurance Claim</a>
+<a href="{% url 'home_collection_add' booking.pk %}" class="btn btn-sm no-print" style="background:var(--purple-l);color:var(--purple);border:1px solid var(--purple)">🏠 Home Collection</a>
+{% endblock %}
+{% block content %}
+<!-- Mobile action buttons -->
+<div class="booking-actions no-print">
+  <a href="{% url 'booking_new' %}" class="btn btn-secondary btn-sm">← New Booking</a>
+  <a href="{% url 'bill_pdf' booking.pk %}" target="_blank" class="btn btn-blue btn-sm">📄 Bill PDF</a>
+  <a href="{% url 'bill_print' booking.pk %}" target="_blank" class="btn btn-secondary btn-sm">🖨 Bill</a>
+  <a href="{% url 'bulk_report_pdf' %}?{% for r in reports %}ids={{ r.pk }}&{% endfor %}" target="_blank" class="btn btn-blue btn-sm">📄 Reports PDF</a>
+</div>
+<!-- Patient Info Bar -->
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:13px 16px;margin-bottom:14px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+  <div>
+    <div style="font-size:9px;color:var(--txt3);text-transform:uppercase;font-weight:700">Patient</div>
+    <div style="font-size:14px;font-weight:700;color:var(--txt);margin-top:2px">{{ booking.patient.salutation }} {{ booking.patient.full_name }}</div>
+    <div style="font-size:11px;color:var(--txt2)">{{ booking.patient.patient_id }} &nbsp;·&nbsp; {{ booking.patient.age }} yr / {{ booking.patient.gender }}</div>
+  </div>
+  <div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;font-weight:700">Ref. Doctor</div><div style="font-size:13px;font-weight:600;color:var(--txt);margin-top:2px">{{ booking.ref_doctor.name|default:"Self" }}</div></div>
+  <div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;font-weight:700">Sample Date</div><div style="font-size:13px;font-weight:600;color:var(--txt);margin-top:2px">{{ booking.sample_date|date:"d M Y" }}</div></div>
+  <div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;font-weight:700">Mobile</div><div style="font-size:12px;font-family:var(--mono);color:var(--teal);margin-top:2px">{{ booking.patient.mobile }}</div></div>
+  <div style="margin-left:auto">
+    <span class="badge {% if booking.status == 'ready' %}b-green{% elif booking.status == 'delivered' %}b-blue{% else %}b-yellow{% endif %}" style="font-size:11px;padding:4px 10px">{{ booking.get_status_display }}</span>
+  </div>
+</div>
+
+<div class="grid2" style="align-items:start">
+  <!-- Reports -->
+  <div>
+    <div class="card mb4">
+      <div class="card-hd">
+        <div><div class="card-title">Tests & Reports</div><div class="card-sub">{{ booking.tests.count }} test(s) booked</div></div>
+      </div>
+      {% for rpt in reports %}
+      <div style="border-bottom:1px solid var(--border);padding:12px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--txt)">{{ rpt.test.name }}</div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:2px">
+            <span class="mono">{{ rpt.report_id }}</span>
+            &nbsp;·&nbsp; {{ rpt.test.sample }}
+            {% if rpt.is_finalized %}&nbsp;·&nbsp; <span style="color:var(--green)">✓ Finalized</span>{% endif %}
+          </div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          {% if user_role == 'admin' or user_role == 'staff' %}
+          <a href="{% url 'report_entry' rpt.pk %}" class="btn btn-yellow btn-xs">✏ Enter Results</a>
+          {% endif %}
+          <a href="{% url 'report_view' rpt.pk %}" class="btn btn-secondary btn-xs">View</a>
+          <a href="{% url 'report_pdf' rpt.pk %}" target="_blank" class="btn btn-blue btn-xs">PDF</a>
+          <a href="{% url 'report_print' rpt.pk %}" target="_blank" class="btn btn-secondary btn-xs">Print</a>
+        </div>
+      </div>
+      {% empty %}
+      <div style="padding:24px;text-align:center;color:var(--txt3)">No reports yet</div>
+      {% endfor %}
+    </div>
+
+    {% if user_role == 'admin' or user_role == 'staff' %}
+    <div class="card">
+      <div class="card-hd"><div class="card-title">Update Status</div></div>
+      <form method="post" action="{% url 'booking_status' booking.pk %}" style="padding:14px;display:flex;gap:8px;align-items:center">
+        {% csrf_token %}
+        <select class="fc" name="status" style="flex:1">
+          <option value="pending" {% if booking.status == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="sample_collected" {% if booking.status == 'sample_collected' %}selected{% endif %}>Sample Collected</option>
+          <option value="processing" {% if booking.status == 'processing' %}selected{% endif %}>Processing</option>
+          <option value="ready" {% if booking.status == 'ready' %}selected{% endif %}>Ready</option>
+          <option value="delivered" {% if booking.status == 'delivered' %}selected{% endif %}>Delivered</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Update</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Bill Summary -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">Bill Summary</div></div>
+    <div style="padding:14px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px">
+        <thead><tr><th style="text-align:left;padding:5px 0;border-bottom:1px solid var(--border);color:var(--txt3);font-size:10px;text-transform:uppercase">Test</th><th style="text-align:right;padding:5px 0;border-bottom:1px solid var(--border);color:var(--txt3);font-size:10px;text-transform:uppercase">Price</th></tr></thead>
+        <tbody>
+          {% for t in booking.tests.all %}
+          <tr><td style="padding:5px 0;border-bottom:1px solid rgba(48,54,61,.4)">{{ t.name }}</td><td style="text-align:right;padding:5px 0;border-bottom:1px solid rgba(48,54,61,.4);font-weight:600">₹{{ t.price }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--txt2)">Subtotal</span><span>₹{{ booking.subtotal }}</span></div>
+      {% if booking.discount_amt > 0 %}<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--green)">Discount ({{ booking.discount_pct }}%)</span><span style="color:var(--green)">−₹{{ booking.discount_amt }}</span></div>{% endif %}
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:700;color:var(--teal);border-top:1px solid var(--border);padding-top:8px;margin-top:5px"><span>Total</span><span>₹{{ booking.total }}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:6px"><span style="color:var(--txt2)">Paid ({{ booking.payment_mode }})</span><span style="color:var(--green)">₹{{ booking.paid }}</span></div>
+      {% if booking.due > 0 %}<div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px;font-weight:700"><span style="color:var(--red)">Due</span><span style="color:var(--red)">₹{{ booking.due }}</span></div>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+function initRazorpay(bookingPk) {
+  fetch('/payment/create-order/' + bookingPk + '/')
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { alert('Error: ' + data.error); return; }
+      var options = {
+        key: data.key_id,
+        amount: data.amount,
+        currency: data.currency,
+        name: '{{ lab_settings.lab_name|default:"Indian Path-Lab" }}',
+        description: 'Payment for ' + data.receipt,
+        order_id: data.order_id,
+        prefill: { name: data.patient_name, email: data.patient_email, contact: data.patient_mobile },
+        theme: { color: '#00b8a9' },
+        handler: function(response) {
+          fetch('/payment/verify/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            })
+          }).then(r => r.json()).then(d => {
+            if (d.ok) { location.reload(); }
+            else { alert('Payment verify failed. Please contact lab.'); }
+          });
+        }
+      };
+      new Razorpay(options).open();
+    })
+    .catch(e => alert('Could not initiate payment: ' + e));
+}
+</script>
+{% endblock %}
+{% endblock %}

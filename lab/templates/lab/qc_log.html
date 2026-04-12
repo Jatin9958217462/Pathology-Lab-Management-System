@@ -1,0 +1,61 @@
+{% extends 'lab/base.html' %}
+{% block title %}QC Log — IPL{% endblock %}
+{% block page_title %}QC Log{% endblock %}
+{% block topbar_actions %}
+<button class="btn btn-primary btn-sm" onclick="openModal('modal-add-qc')">+ Add QC Entry</button>
+{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div><div class="wb-title">✅ Quality Control Log</div><div class="wb-sub">Daily instrument QC — mandatory records</div></div>
+</div>
+<div class="card">
+  <div class="tw"><table>
+    <thead><tr><th>Date</th><th>Instrument</th><th>Test / Control</th><th>Level</th><th>Expected</th><th>Obtained</th><th>Result</th><th>By</th></tr></thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td style="font-size:11px;white-space:nowrap">{{ log.date|date:"d M Y" }}</td>
+        <td><strong style="font-size:12px">{{ log.instrument }}</strong></td>
+        <td>{{ log.test_name }}</td>
+        <td style="font-size:11px;color:var(--txt2)">{{ log.control_level|default:"—" }}</td>
+        <td class="mono" style="font-size:11px">{{ log.expected_value|default:"—" }}</td>
+        <td class="mono" style="font-size:11px">{{ log.obtained_value|default:"—" }}</td>
+        <td>{% if log.result == 'pass' %}<span class="badge b-green">✓ Pass</span>{% elif log.result == 'fail' %}<span class="badge" style="background:var(--red-l);color:var(--red)">✗ Fail</span>{% else %}<span class="badge b-yellow">↻ Repeat</span>{% endif %}</td>
+        <td style="font-size:11px;color:var(--txt3)">{{ log.performed_by.get_full_name|default:log.performed_by.username|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--txt3)">No QC entries yet. Use the + Add QC Entry button above.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+<div class="mover" id="modal-add-qc">
+  <div class="mbox">
+    <div class="mhd"><div class="mtitle">✅ Add QC Entry</div><button class="mclose" onclick="closeModal('modal-add-qc')">×</button></div>
+    <form method="post">{% csrf_token %}
+      <div class="mbody">
+        <div class="frow">
+          <div class="fg"><label class="fl">Date <span class="req">*</span></label><input class="fc" type="date" name="date" required value="{% now 'Y-m-d' %}"></div>
+          <div class="fg"><label class="fl">Result</label><select class="fc" name="result"><option value="pass">Pass ✓</option><option value="fail">Fail ✗</option><option value="repeat">Repeat Needed</option></select></div>
+        </div>
+        <div class="fg"><label class="fl">Instrument <span class="req">*</span></label><input class="fc" name="instrument" placeholder="e.g. Sysmex XN-1000, Chemistry Analyser" required></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Test / Control Name</label><input class="fc" name="test_name" placeholder="e.g. CBC Control, Glucose QC"></div>
+          <div class="fg"><label class="fl">Control Level</label><input class="fc" name="control_level" placeholder="Low / Normal / High"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Expected Value</label><input class="fc" name="expected_value" placeholder="e.g. 7.5 g/dL"></div>
+          <div class="fg"><label class="fl">Obtained Value</label><input class="fc" name="obtained_value" placeholder="e.g. 7.3 g/dL"></div>
+        </div>
+        <div class="fg"><label class="fl">Remarks</label><textarea class="fc" name="remarks" rows="2"></textarea></div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-qc')">Cancel</button><button type="submit" class="btn btn-primary">Save QC Entry</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mover').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+</script>{% endblock %}

@@ -1,0 +1,143 @@
+{% extends 'lab/base.html' %}
+{% block title %}AutoImport — IPL{% endblock %}
+{% block page_title %}AutoImport{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="wb-title">🔬 AutoImport</div>
+      <div class="wb-sub">Lab analyser machine interface — ASTM, HL7, CSV — automatically import results into reports</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--teal)">{{ analysers|length }}</div>
+      <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px">Machines</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+  <!-- Add machine -->
+  <div class="fpanel">
+    <div class="fpanel-hd">
+      <div class="fpanel-title">⚙️ Add Analyser Machine</div>
+      <div style="font-size:10px;color:var(--txt3)">Sysmex, Mindray, Beckman, Erba, etc.</div>
+    </div>
+    <div class="fpanel-body">
+      <form method="post" action="{% url 'analyser_add' %}">
+        {% csrf_token %}
+        <div class="fg">
+          <label class="fl">Machine Name <span class="req">*</span></label>
+          <input type="text" name="name" class="fc" placeholder="e.g. Sysmex XN-1000" required>
+        </div>
+        <div class="frow">
+          <div class="fg">
+            <label class="fl">Protocol</label>
+            <select name="protocol" class="fc">
+              <option value="ASTM">ASTM E1394 (most common)</option>
+              <option value="HL7">HL7 2.x</option>
+              <option value="CSV">CSV / TXT File</option>
+              <option value="SERIAL">Serial Port RS-232</option>
+              <option value="TCP">TCP/IP Socket</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label class="fl">Port Number</label>
+            <input type="number" name="port" class="fc" placeholder="e.g. 4000">
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">IP Address / COM Port</label>
+          <input type="text" name="host" class="fc" placeholder="e.g. 192.168.1.100 or COM3">
+        </div>
+        <div class="fg">
+          <label class="fl">Test Parameter Mapping (JSON)</label>
+          <textarea name="test_mapping" class="fc" rows="3" style="font-family:var(--mono);font-size:11px" placeholder='{"WBC": 5, "HGB": 3, "RBC": 7, "PLT": 12}'>{}</textarea>
+          <div style="font-size:10px;color:var(--txt3);margin-top:4px">Machine code → TestParameter primary key (check pk in the Admin panel)</div>
+        </div>
+        <button class="btn btn-primary btn-full">Add Machine</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CSV Upload -->
+  <div>
+    <div class="fpanel">
+      <div class="fpanel-hd">
+        <div class="fpanel-title">📂 CSV Manual Import</div>
+        <div style="font-size:10px;color:var(--txt3)">Export file from analyser, then upload here</div>
+      </div>
+      <div class="fpanel-body">
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:12px;font-family:var(--mono);font-size:11px;color:var(--txt2);line-height:1.8">
+          <div style="color:var(--txt3);font-size:10px;margin-bottom:4px">Expected CSV format:</div>
+          SampleID,WBC,HGB,RBC,PLT<br>
+          RCP-2026-0001,7.2,13.5,4.8,230
+        </div>
+        <form method="post" action="{% url 'analyser_upload_csv' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="fg">
+            <input type="file" name="csv_file" class="fc" accept=".csv,.txt" required>
+          </div>
+          <button class="btn btn-success btn-full">📂 Upload &amp; Auto-Import</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TCP command -->
+    <div class="card" style="margin-top:12px;border-color:rgba(0,184,169,.2);background:var(--teal-l)">
+      <div class="card-hd"><div class="card-title">🖥️ TCP Listener (Real-time)</div></div>
+      <div style="padding:12px 15px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:var(--mono);font-size:12px;color:var(--teal)">
+          python manage.py run_analyser_listener --port 4000
+        </div>
+        <p style="font-size:11px;color:var(--txt2);margin-top:8px">Connect the analyser machine to this server's IP on port 4000 (ASTM protocol). Results will be imported automatically.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Configured machines -->
+<div class="card" style="margin-top:14px">
+  <div class="card-hd"><div class="card-title">Configured Machines ({{ analysers|length }})</div></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Machine Name</th><th>Protocol</th><th>Host : Port</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for a in analysers %}
+        <tr>
+          <td><strong>{{ a.name }}</strong></td>
+          <td><span class="mono" style="font-size:11px;background:var(--surface2);padding:2px 6px;border-radius:3px">{{ a.protocol }}</span></td>
+          <td style="font-size:11px;color:var(--txt2)">{{ a.host|default:"—" }}{% if a.port %}:{{ a.port }}{% endif %}</td>
+          <td>{% if a.is_active %}<span class="badge b-green">● Active</span>{% else %}<span class="badge" style="background:var(--red-l);color:var(--red)">● Inactive</span>{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--txt3)">No machines configured yet — fill the form above</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if pending_results %}
+<div class="card" style="margin-top:14px">
+  <div class="card-hd">
+    <div><div class="card-title">⏳ Pending Import ({{ pending_results|length }})</div><div class="card-sub">These results were not imported into reports — import them manually</div></div>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Received</th><th>Sample ID</th><th>Analyser</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for r in pending_results %}
+        <tr>
+          <td style="font-size:11px;color:var(--txt2)">{{ r.received_at|date:"d M H:i" }}</td>
+          <td><span class="mono" style="color:var(--yellow)">{{ r.sample_id }}</span></td>
+          <td>{{ r.analyser.name|default:"Unknown" }}</td>
+          <td><span class="badge b-yellow">⏳ Pending</span></td>
+          <td><a href="{% url 'analyser_import_result' r.pk %}" class="btn btn-primary btn-xs">Import Now</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

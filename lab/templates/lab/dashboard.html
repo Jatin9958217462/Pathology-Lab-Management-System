@@ -1,0 +1,67 @@
+{% extends 'lab/base.html' %}
+{% block title %}Dashboard — {{ LAB_NAME }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block extra_head %}
+<style>
+@media(max-width:640px){
+  .wbanner [style*="text-align:right"]{text-align:left!important;}
+  .card-hd{flex-wrap:wrap;}
+  .grid2{grid-template-columns:1fr!important;}
+}
+</style>
+{% endblock %}
+{% block topbar_actions %}
+{% if user_role == 'admin' or user_role == 'staff' %}
+<a href="{% url 'booking_new' %}" class="btn btn-primary btn-sm no-print">+ New Booking</a>
+{% endif %}
+{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="wb-title">🔬 {{ LAB_NAME }} Management System</div>
+      <div class="wb-sub">{% if LAB %}{{ LAB.address|striptags }}{% else %}C-451, Gali No.5, Old Mustafabad, Delhi-110094{% endif %} &nbsp;·&nbsp; {% if LAB %}{{ LAB.phone }}{% else %}9213303786, 9971404170{% endif %}</div>
+    </div>
+    <div style="text-align:right;font-size:12px;color:var(--txt2)">{{ today|date:"l, d F Y" }}<br><span style="font-size:10px;color:var(--txt3)">ISO 9001:2015 | PMEGP Govt. India</span></div>
+  </div>
+</div>
+<div class="stats">
+  <div class="stat"><div class="stat-icon si-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="stat-val">{{ total_patients }}</div><div class="stat-lbl">Total Patients</div></div>
+  <div class="stat"><div class="stat-icon si-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="stat-val">{{ total_reports }}</div><div class="stat-lbl">Total Reports</div></div>
+  <div class="stat"><div class="stat-icon si-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><div class="stat-val">{{ today_bookings }}</div><div class="stat-lbl">Today's Bookings</div></div>
+  <div class="stat"><div class="stat-icon si-yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="stat-val">₹{{ revenue_today|floatformat:0 }}</div><div class="stat-lbl">Today's Revenue</div></div>
+  <div class="stat"><div class="stat-icon si-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="stat-val">{{ total_doctors }}</div><div class="stat-lbl">Doctors</div></div>
+</div>
+<div class="grid2">
+  <div class="card mb4">
+    <div class="card-hd"><div><div class="card-title">Recent Bookings</div></div><a href="{% url 'patients' %}" class="btn btn-secondary btn-sm">View All</a></div>
+    <div class="tw"><table><thead><tr><th>Receipt</th><th>Patient</th><th>Tests</th><th>Amount</th><th>Status</th><th></th></tr></thead><tbody>
+    {% for bk in recent_bookings %}
+    <tr>
+      <td><span class="mono">{{ bk.receipt_id }}</span></td>
+      <td><strong>{{ bk.patient.full_name }}</strong><br><span style="font-size:10px;color:var(--txt3)">{{ bk.patient.patient_id }}</span></td>
+      <td style="font-size:11px;color:var(--txt2)">{{ bk.tests.count }} test(s)</td>
+      <td style="font-weight:700;color:var(--teal)">₹{{ bk.total|floatformat:0 }}</td>
+      <td><span class="badge {% if bk.status == 'ready' %}b-green{% elif bk.status == 'delivered' %}b-blue{% else %}b-yellow{% endif %}">{{ bk.get_status_display }}</span></td>
+      <td><a href="{% url 'booking_detail' bk.pk %}" class="btn btn-secondary btn-xs">Open</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:24px">No bookings yet</td></tr>
+    {% endfor %}
+    </tbody></table></div>
+  </div>
+  <div class="card mb4">
+    <div class="card-hd"><div class="card-title">Pending Reports (Enter Results)</div></div>
+    <div class="tw"><table><thead><tr><th>Report ID</th><th>Patient</th><th>Test</th><th>Action</th></tr></thead><tbody>
+    {% for rpt in pending_reports %}
+    <tr>
+      <td><span class="mono">{{ rpt.report_id }}</span></td>
+      <td style="font-size:12px">{{ rpt.booking.patient.full_name }}</td>
+      <td style="font-size:11px;color:var(--txt2)">{{ rpt.test.name }}</td>
+      <td><a href="{% url 'report_entry' rpt.pk %}" class="btn btn-yellow btn-xs">Enter Results</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="4" style="text-align:center;color:var(--txt3);padding:24px">No pending reports 🎉</td></tr>
+    {% endfor %}
+    </tbody></table>
+  </div>
+</div>
+{% endblock %}

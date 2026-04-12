@@ -1,0 +1,385 @@
+{% extends 'lab/base.html' %}
+{% block title %}Enter Results — {{ report.test.name }}{% endblock %}
+{% block page_title %}Enter Results: {{ report.test.name }}{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'booking_detail' report.booking.pk %}" class="btn btn-secondary btn-sm">← Back to Booking</a>
+{% endblock %}
+{% block extra_head %}
+<style>
+.results-table{width:100%;border-collapse:collapse;}
+.results-table thead th{padding:9px 14px;background:rgba(0,184,169,.06);font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);text-align:left;}
+.results-table tbody tr{border-bottom:1px solid rgba(48,54,61,.4);}
+.results-table tbody tr:hover{background:rgba(0,184,169,.02);}
+.results-table tbody td{padding:7px 12px;vertical-align:middle;}
+.val-input{width:100%;padding:6px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:border .15s;}
+.val-input:focus{border-color:var(--teal);}
+.flag-high{color:var(--red);font-weight:700;font-size:11px;}
+.flag-low{color:var(--yellow);font-weight:700;font-size:11px;}
+.flag-normal{color:var(--green);font-size:11px;}
+.flag-text{color:var(--txt2);font-size:11px;}
+.range-info{font-size:11px;color:var(--txt3);}
+#btn-auto-calc{
+  background:var(--teal);color:#fff;border:none;border-radius:6px;
+  padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;
+  display:none;align-items:center;gap:5px;transition:opacity .15s;
+}
+@media(max-width:640px){
+  .results-table thead th:nth-child(3),.results-table tbody td:nth-child(3){display:none;}
+  .val-input{font-size:12px;padding:5px 8px;}
+  .results-table thead th,.results-table tbody td{padding:6px 8px;}
+}
+#btn-auto-calc:hover{opacity:.82;}
+</style>
+{% endblock %}
+{% block content %}
+<!-- Patient bar -->
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:11px 16px;margin-bottom:14px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+  <div><div style="font-size:9px;color:var(--txt3);font-weight:700;text-transform:uppercase">Patient</div><div style="font-size:13px;font-weight:700;color:var(--txt)">{{ booking.patient.salutation }} {{ booking.patient.full_name }}</div></div>
+  <div><div style="font-size:9px;color:var(--txt3);font-weight:700;text-transform:uppercase">ID</div><div class="mono" style="margin-top:2px">{{ booking.patient.patient_id }}</div></div>
+  <div><div style="font-size:9px;color:var(--txt3);font-weight:700;text-transform:uppercase">Age/Gender</div><div style="font-size:12px;color:var(--txt2)">{{ booking.patient.age }} yr / {{ booking.patient.gender }}</div></div>
+  <div><div style="font-size:9px;color:var(--txt3);font-weight:700;text-transform:uppercase">Report ID</div><div class="mono" style="margin-top:2px">{{ report.report_id }}</div></div>
+  <div><div style="font-size:9px;color:var(--txt3);font-weight:700;text-transform:uppercase">Sample Date</div><div style="font-size:12px;color:var(--txt2)">{{ booking.sample_date|date:"d M Y" }}</div></div>
+  {% if report.booking.ref_doctor %}
+  <div><div style="font-size:9px;color:var(--txt3);font-weight:700;text-transform:uppercase">Ref. Dr.</div><div style="font-size:12px;color:var(--txt2)">{{ report.booking.ref_doctor.name }}</div></div>
+  {% endif %}
+</div>
+
+<form method="post">{% csrf_token %}
+<div class="card mb4">
+  <div class="card-hd">
+    <div><div class="card-title">{{ report.test.name }}</div><div class="card-sub">Enter test parameter values below</div></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button type="button" id="btn-auto-calc" onclick="autoCalcFill()">🧮 Calculate</button>
+      <span class="badge {% if report.is_finalized %}b-green{% else %}b-yellow{% endif %}">{% if report.is_finalized %}Finalized{% else %}Pending{% endif %}</span>
+    </div>
+  </div>
+  <div class="tw">
+    <table class="results-table">
+      <thead><tr><th style="min-width:180px">Parameter</th><th style="min-width:120px">Value</th><th>Unit</th><th>Lower Limit</th><th>Upper Limit</th><th>Flag</th><th style="width:36px"></th></tr></thead>
+      <tbody id="results-tbody">
+        {% if results %}
+          {% for res in results %}
+          <tr>
+            <td style="font-size:12px;font-weight:500;color:var(--txt)">{{ res.param_name }}</td>
+            <td>
+              <input type="text" class="val-input" name="val_{{ res.pk }}" id="v{{ res.pk }}"
+                value="{{ res.value }}"
+                placeholder="{% if res.parameter and res.parameter.default_value %}Default: {{ res.parameter.default_value }}{% else %}Enter value{% endif %}"
+                data-lo="{{ res.lower_limit|default:'' }}"
+                data-hi="{{ res.upper_limit|default:'' }}"
+                oninput="updateFlag('{{ res.pk }}', this.value, '{{ res.lower_limit|default:'' }}', '{{ res.upper_limit|default:'' }}')">
+            </td>
+            <td class="range-info">{{ res.unit|default:"—" }}</td>
+            <td class="range-info">{{ res.lower_limit|default:"—" }}</td>
+            <td class="range-info">{{ res.upper_limit|default:"—" }}</td>
+            <td id="flag-{{ res.pk }}">
+              {% if res.flag == 'high' %}<span class="flag-high">High ↑</span>
+              {% elif res.flag == 'low' %}<span class="flag-low">Low ↓</span>
+              {% elif res.flag == 'normal' %}<span class="flag-normal">Normal</span>
+              {% else %}<span class="flag-text">—</span>{% endif %}
+            </td>
+            <td>
+              <button type="button"
+                class="edit-param-btn"
+                data-pk="{{ res.pk }}"
+                data-name="{{ res.param_name|escapejs }}"
+                data-unit="{{ res.unit|escapejs }}"
+                data-lo="{{ res.lower_limit|default:'' }}"
+                data-hi="{{ res.upper_limit|default:'' }}"
+                style="background:none;border:1px solid var(--border2);border-radius:5px;padding:3px 7px;cursor:pointer;color:var(--teal);font-size:12px" title="Edit param/range">✏️</button>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;color:var(--txt3);padding:28px">No parameters defined for this test.<br><a href="{% url 'test_params' report.test.pk %}">Click here to add parameters →</a></td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="fpanel">
+  <div class="fpanel-hd"><div class="fpanel-title">Remarks / Clinical Observations</div></div>
+  <div class="fpanel-body">
+    <textarea class="fc" name="remarks" rows="3" placeholder="Additional findings, notes for the doctor...">{{ report.remarks }}</textarea>
+    <div class="frow" style="margin-top:10px">
+      <div class="fg"><label class="fl">Custom ID No. <span style="font-size:10px;font-weight:400;color:var(--txt3)">(shown on report — leave blank for auto)</span></label>
+        <input class="fc" name="custom_report_no" value="{{ report.custom_report_no }}" placeholder="e.g. 3063 / 1585">
+      </div>
+      <div class="fg"><label class="fl">Custom Patient Display ID</label>
+        <input class="fc" name="custom_display_id" value="{{ report.booking.patient.custom_display_id }}" placeholder="Custom ID for this patient">
+      </div>
+    </div>
+    <div class="frow3" style="margin-top:6px">
+      <div class="fg"><label class="fl">Sample Drawn Date</label><input class="fc" type="date" name="sample_drawn_date" value="{{ report.sample_drawn_date|default:'' }}"></div>
+      <div class="fg"><label class="fl">Sample Received Date</label><input class="fc" type="date" name="sample_received_date" value="{{ report.sample_received_date|default:'' }}"></div>
+      <div class="fg"><label class="fl">Result Reported Date</label><input class="fc" type="date" name="result_reported_date" value="{{ report.result_reported_date|default:'' }}"></div>
+    </div>
+  </div>
+  <div class="fpanel-foot">
+    <a href="{% url 'booking_detail' booking.pk %}" class="btn btn-secondary">Cancel</a>
+    <button type="submit" name="action" value="save" class="btn btn-yellow">💾 Save</button>
+    <button type="submit" name="action" value="finalize" class="btn btn-success" onclick="return confirm('Finalize and lock this report?')">✓ Save & Finalize</button>
+  </div>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Flag updater ── */
+function updateFlag(pk, val, lo, hi){
+  const td = document.getElementById('flag-' + pk);
+  if(!val){ td.innerHTML = '<span class="flag-text">—</span>'; return; }
+  if(!lo && !hi){ td.innerHTML = '<span class="flag-text">'+val+'</span>'; return; }
+  const n = parseFloat(val);
+  if(isNaN(n)){ td.innerHTML = '<span class="flag-text">'+val+'</span>'; return; }
+  if(lo && n < parseFloat(lo)) td.innerHTML = '<span class="flag-low">Low ↓</span>';
+  else if(hi && n > parseFloat(hi)) td.innerHTML = '<span class="flag-high">High ↑</span>';
+  else td.innerHTML = '<span class="flag-normal">Normal</span>';
+}
+const allInputs = Array.from(document.querySelectorAll('.val-input'));
+allInputs.forEach((inp, idx) => {
+  if(inp.value) updateFlag(inp.id.slice(1), inp.value, inp.dataset.lo, inp.dataset.hi);
+  /* Enter key moves to next input */
+  inp.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      const next = allInputs[idx + 1];
+      if(next) next.focus();
+    }
+  });
+});
+/* Auto-focus first empty input on page load */
+const firstEmpty = allInputs.find(i => !i.value) || allInputs[0];
+if(firstEmpty) setTimeout(() => firstEmpty.focus(), 120);
+
+/* ════════════════════════════════════════════
+   AUTO-CALCULATE & FILL
+   Click "Calculate" → computed values go
+   directly into the matching input fields.
+   ════════════════════════════════════════════ */
+(function(){
+  const testName = "{{ report.test.name|escapejs }}".toUpperCase();
+
+  /* read a numeric value from the form by matching parameter label hints */
+  function getVal(hints){
+    for(const row of document.querySelectorAll('#results-tbody tr')){
+      const lbl = (row.cells[0]?.textContent||'').trim().toUpperCase();
+      for(const h of hints){
+        if(lbl.includes(h.toUpperCase())){
+          const v = parseFloat(row.querySelector('input')?.value);
+          return isNaN(v) ? null : v;
+        }
+      }
+    }
+    return null;
+  }
+
+  /* write a value into the matching input and update its flag */
+  function fillByHint(hints, value){
+    if(value === null || isNaN(value)) return;
+    for(const row of document.querySelectorAll('#results-tbody tr')){
+      const lbl = (row.cells[0]?.textContent||'').trim().toUpperCase();
+      const inp = row.querySelector('input');
+      if(!inp) continue;
+      for(const h of hints){
+        if(lbl.includes(h.toUpperCase())){
+          const pk = inp.name.replace('val_','');
+          inp.value = parseFloat(value).toFixed(2);
+          updateFlag(pk, inp.value, inp.dataset.lo, inp.dataset.hi);
+          return;
+        }
+      }
+    }
+  }
+
+  /* detect test category from test name OR parameter names */
+  let calcType = null;
+  if(/CBC|COMPLETE BLOOD|HAEMOGRAM|BLOOD COUNT/.test(testName))  calcType = 'CBC';
+  else if(/LFT|LIVER FUNCTION/.test(testName))                   calcType = 'LFT';
+  else if(/LIPID|CHOLESTEROL/.test(testName))                    calcType = 'LIPID';
+  else if(/KFT|KIDNEY FUNCTION|RENAL/.test(testName))            calcType = 'KFT';
+
+  if(!calcType){
+    const lbls = [...document.querySelectorAll('#results-tbody tr td:first-child')]
+                   .map(td => td.textContent.trim().toUpperCase()).join('|');
+    if(/HEMOGLOBIN|HAEMOGLOBIN|MCHC|RBC COUNT/.test(lbls))       calcType = 'CBC';
+    else if(/BILIRUBIN|SGOT|SGPT|ALBUMIN|GLOBULIN/.test(lbls))   calcType = 'LFT';
+    else if(/TRIGLYCERIDE|HDL|VLDL|LDL CHOL/.test(lbls))         calcType = 'LIPID';
+    else if(/UREA|CREATININE|URIC ACID/.test(lbls))               calcType = 'KFT';
+  }
+
+  /* show the Calculate button only for supported test types */
+  if(calcType) document.getElementById('btn-auto-calc').style.display = 'flex';
+
+  /* main function called on button click */
+  window.autoCalcFill = function(){
+
+    if(calcType === 'CBC'){
+      const hb     = getVal(['HEMOGLOBIN','HAEMOGLOBIN']);
+      const rbc    = getVal(['RBC COUNT','RBC']);
+      const pcvRaw = getVal(['PCV','HEMATOCRIT','HCT']);
+      const pcvCalc = hb !== null ? hb * 3 : null;
+      const hct     = (pcvRaw && pcvRaw > 0) ? pcvRaw : pcvCalc;
+
+      fillByHint(['PCV','HEMATOCRIT'],       pcvCalc);
+      fillByHint(['MCV'],  hct && rbc ? (hct * 10) / rbc  : null);
+      fillByHint(['MCH'],  hb  && rbc ? (hb  * 10) / rbc  : null);
+      fillByHint(['MCHC'], hb  && hct ? (hb  * 100) / hct : null);
+    }
+
+    else if(calcType === 'LFT'){
+      const totBil = getVal(['BILIRUBIN TOTAL','TOTAL BILIRUBIN','BILIRUBIN T']);
+      const dirBil = getVal(['BILIRUBIN DIRECT','DIRECT BILIRUBIN']);
+      const prot   = getVal(['PROTIEN','PROTEIN','TOTAL PROTEIN']);
+      const alb    = getVal(['ALBUMIN']);
+      const urea   = getVal(['UREA']);
+
+      const indBil  = (totBil !== null && dirBil !== null) ? totBil - dirBil : null;
+      const glob    = (prot   !== null && alb    !== null) ? prot   - alb    : null;
+      const agRatio = (alb && glob)  ? alb / glob   : null;
+      const bun     = urea !== null  ? urea / 0.467 : null;
+
+      fillByHint(['BILIRUBIN INDIRECT','INDIRECT BILIRUBIN','B. INDIRECT'], indBil);
+      fillByHint(['GLOBULIN'],                                               glob);
+      fillByHint(['A:G RATIO','A : G','A/G RATIO','A/G','AG RATIO'],         agRatio);
+      fillByHint(['BUN'],                                                    bun);
+    }
+
+    else if(calcType === 'LIPID'){
+      const tc  = getVal(['S.CHOLESTROL TOTAL','TOTAL CHOLESTEROL','S. CHOLESTEROL','S.CHOLESTEROL','CHOLESTROL TOTAL']);
+      const hdl = getVal(['CHOLESTEROL - HDL','HDL (DIRECT','HDL CHOLESTEROL','HDL']);
+      const tg  = getVal(['TRIGLYCERIDES - SERUM','TRIGLYCERIDES','TRIGLYCERIDE']);
+
+      const vldl   = tg  !== null ? tg / 5 : null;
+      const ldl    = (tc !== null && hdl !== null && vldl !== null) ? tc-(hdl+vldl) : null;
+      const ldlHdl = (ldl !== null && hdl) ? ldl / hdl : null;
+      const tgHdl  = (tg  !== null && hdl) ? tg  / hdl : null;
+      const chlHdl = (tc  !== null && hdl) ? tc  / hdl : null;
+
+      fillByHint(['VLDL -VERY LOW','VLDL'],                                    vldl);
+      fillByHint(['LDL CHOLESTROL','LDL CHOLESTEROL'],                         ldl);
+      fillByHint(['LDL CHOLESTROL/HDL RATIO','LDL CHOLESTROL/HDL','LDL/HDL'], ldlHdl);
+      fillByHint(['TRIGLYCERIDES/HDL RATIO','TRIGLYCERIDES/HDL','TG/HDL'],     tgHdl);
+      fillByHint(['S.CHOLESTROL/HDL RATIO','S.CHOLESTROL/HDL','CHL/HDL'],      chlHdl);
+    }
+
+    else if(calcType === 'KFT'){
+      const urea = getVal(['BLOOD UREA','UREA']);
+      fillByHint(['BUN'], urea !== null ? urea * 0.467 : null);
+    }
+  };
+})();
+</script>
+
+
+<!-- Parameter Edit Modal -->
+<div id="param-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;width:340px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+    <div style="font-size:14px;font-weight:700;color:var(--txt);margin-bottom:16px">✏️ Edit Parameter</div>
+    <input type="hidden" id="pe-pk">
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--txt3);font-weight:700;display:block;margin-bottom:3px">Parameter Name</label>
+      <input id="pe-name" style="width:100%;padding:7px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--txt);font-size:13px">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--txt3);font-weight:700;display:block;margin-bottom:3px">Unit</label>
+      <input id="pe-unit" style="width:100%;padding:7px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--txt);font-size:13px">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div>
+        <label style="font-size:11px;color:var(--txt3);font-weight:700;display:block;margin-bottom:3px">Lower Limit</label>
+        <input id="pe-lo" type="number" step="any" style="width:100%;padding:7px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--txt);font-size:13px">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--txt3);font-weight:700;display:block;margin-bottom:3px">Upper Limit</label>
+        <input id="pe-hi" type="number" step="any" style="width:100%;padding:7px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--txt);font-size:13px">
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button onclick="closeParamModal()" style="padding:7px 16px;border:1px solid var(--border2);border-radius:6px;background:var(--bg3);color:var(--txt);cursor:pointer;font-size:13px">Cancel</button>
+      <button onclick="saveParam()" style="padding:7px 18px;border:none;border-radius:6px;background:var(--teal);color:#fff;cursor:pointer;font-size:13px;font-weight:700">Save</button>
+    </div>
+    <div id="pe-msg" style="font-size:11px;margin-top:8px;color:var(--green)"></div>
+  </div>
+</div>
+
+<script>
+function openParamEdit(pk, name, unit, lo, hi){
+  document.getElementById('pe-pk').value   = pk;
+  document.getElementById('pe-name').value = name;
+  document.getElementById('pe-unit').value = unit;
+  document.getElementById('pe-lo').value   = lo;
+  document.getElementById('pe-hi').value   = hi;
+  document.getElementById('pe-msg').textContent  = '';
+  document.getElementById('pe-msg').style.color  = 'var(--green)';
+  document.getElementById('param-modal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('pe-name').focus(), 50);
+}
+
+/* Data-attribute based pencil button handler — avoids Django template quoting bugs */
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.edit-param-btn');
+  if(!btn) return;
+  openParamEdit(
+    btn.dataset.pk,
+    btn.dataset.name,
+    btn.dataset.unit,
+    btn.dataset.lo,
+    btn.dataset.hi
+  );
+});
+function closeParamModal(){
+  document.getElementById('param-modal').style.display = 'none';
+}
+function saveParam(){
+  const pk   = document.getElementById('pe-pk').value;
+  const name = document.getElementById('pe-name').value.trim();
+  const unit = document.getElementById('pe-unit').value.trim();
+  const lo   = document.getElementById('pe-lo').value;
+  const hi   = document.getElementById('pe-hi').value;
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  if(!name){ document.getElementById('pe-msg').textContent='Name required'; return; }
+  document.getElementById('pe-msg').textContent = 'Saving…';
+  document.getElementById('pe-msg').style.color = 'var(--txt3)';
+  fetch(`/result/${pk}/edit/`, {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':csrf},
+    body: new URLSearchParams({param_name:name, unit:unit, lower_limit:lo, upper_limit:hi})
+  }).then(r=>r.json()).then(d=>{
+    if(d.ok){
+      const inp = document.getElementById('v'+pk);
+      const row = inp.closest('tr');
+      row.cells[0].textContent = d.param_name;
+      row.cells[2].textContent = d.unit || '—';
+      row.cells[3].textContent = d.lower_limit !== null ? d.lower_limit : '—';
+      row.cells[4].textContent = d.upper_limit !== null ? d.upper_limit : '—';
+      inp.dataset.lo = d.lower_limit !== null ? String(d.lower_limit) : '';
+      inp.dataset.hi = d.upper_limit !== null ? String(d.upper_limit) : '';
+      updateFlag(pk, inp.value, inp.dataset.lo, inp.dataset.hi);
+      /* Refresh pencil button data-attributes so next click shows current values */
+      const btn = row.querySelector('.edit-param-btn');
+      if(btn){
+        btn.dataset.name = d.param_name;
+        btn.dataset.unit = d.unit || '';
+        btn.dataset.lo   = d.lower_limit !== null ? d.lower_limit : '';
+        btn.dataset.hi   = d.upper_limit !== null ? d.upper_limit : '';
+      }
+      document.getElementById('pe-msg').style.color = 'var(--green)';
+      document.getElementById('pe-msg').textContent = '✓ Saved!';
+      setTimeout(closeParamModal, 800);
+    } else {
+      document.getElementById('pe-msg').style.color = 'var(--red)';
+      document.getElementById('pe-msg').textContent = '✗ Save failed';
+    }
+  }).catch(()=>{
+    document.getElementById('pe-msg').style.color = 'var(--red)';
+    document.getElementById('pe-msg').textContent = '✗ Network error';
+  });
+}
+document.getElementById('param-modal').addEventListener('click', function(e){
+  if(e.target === this) closeParamModal();
+});
+</script>
+{% endblock %}

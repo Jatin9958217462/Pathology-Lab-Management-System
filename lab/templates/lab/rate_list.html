@@ -1,0 +1,71 @@
+{% extends 'lab/base.html' %}
+{% block title %}Rate List — {{ LAB_NAME }}{% endblock %}
+{% block page_title %}Test Rate List{% endblock %}
+{% block extra_head %}
+<style>
+@media(max-width:640px){
+  .tw table{min-width:320px;}
+  thead th:nth-child(3),tbody td:nth-child(3){display:none;}
+}
+@media print{
+  :root{--bg:#fff;--bg2:#fff;--bg3:#f8f9ff;--surface:#fff;--border:#dde3f5;--txt:#111;--txt2:#555;--txt3:#777;--teal:#1a56db;}
+  body{background:#fff;color:#111;}
+  .card{border:1px solid #dde3f5;}
+  .no-print{display:none!important;}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+</style>
+{% endblock %}
+{% block topbar_actions %}
+<button class="btn btn-primary btn-sm no-print" onclick="window.print()">🖨 Print Rate List</button>
+{% endblock %}
+{% block content %}
+
+{% if not user.is_authenticated %}
+<div style="background:linear-gradient(135deg,#1a56db,#0ea5e9);color:#fff;padding:18px 22px;border-radius:12px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+  <div>
+    <div style="font-size:18px;font-weight:800;">{{ LAB_NAME }}</div>
+    <div style="font-size:12px;opacity:.85;margin-top:3px;">Complete Test Price List — No login required to view</div>
+  </div>
+  <a href="{% url 'login' %}" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:7px 16px;font-size:12px;font-weight:600;text-decoration:none;">Staff Login →</a>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-hd">
+    <div>
+      <div class="card-title">{{ LAB_NAME }} — Test Price List</div>
+      <div class="card-sub">All prices are inclusive of sample collection at the lab.</div>
+    </div>
+    <form method="get" style="display:flex;gap:6px;align-items:center;">
+      <input name="q" value="{{ q }}" placeholder="🔍 Search test..."
+             style="padding:5px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--txt);font-size:12px;outline:none;width:200px;"
+             oninput="this.form.submit()">
+      {% if q %}<a href="{% url 'rate_list' %}" style="font-size:11px;color:var(--txt2);">✕ Clear</a>{% endif %}
+    </form>
+  </div>
+
+  {% for cat, tests in by_cat.items %}
+  <div style="border-bottom:1px solid var(--border)">
+    <div style="padding:7px 14px;background:rgba(0,184,169,.06);font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px">{{ cat }}</div>
+    <div class="tw"><table>
+      <thead><tr><th>Name of Test</th><th>Sample Type</th><th>Price</th><th>TAT</th></tr></thead>
+      <tbody>
+      {% for t in tests %}<tr>
+        <td style="color:var(--txt)">{{ t.name }}</td>
+        <td><span class="badge b-gray">{{ t.sample }}</span></td>
+        <td style="font-weight:700;color:var(--teal);font-family:var(--mono)">₹{{ t.price }}/=</td>
+        <td style="font-size:11px;color:var(--txt3)">{{ t.tat|default:"—" }}</td>
+      </tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  {% empty %}
+  <div style="padding:28px;text-align:center;color:var(--txt3)">No tests found.</div>
+  {% endfor %}
+
+  <div style="padding:10px 16px;font-size:10px;color:var(--txt3);border-top:1px solid var(--border)">
+    Prices subject to change. Contact the lab for latest rates. | {% now "d M Y" %}
+  </div>
+</div>
+{% endblock %}

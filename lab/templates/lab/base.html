@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<script>
+// Apply theme immediately to prevent flash
+(function(){var t=localStorage.getItem('ipl-app-theme')||'dark';if(t==='system'){var d=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.setAttribute('data-theme',d?'dark':'light');}else{document.documentElement.setAttribute('data-theme',t);}})();
+</script>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{% block title %}Indian Path-Lab{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══ IPL LAB MANAGEMENT — PROFESSIONAL THEME ═══ */
+/* ── THEME DEFINITIONS ── */
+:root,[data-theme="dark"]{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--surface:#21262d;--surface2:#2d333b;
+  --border:#30363d;--border2:#444c56;
+  --teal:#00b8a9;--teal-d:#009688;--teal-l:rgba(0,184,169,.12);
+  --blue:#388bfd;--blue-l:rgba(56,139,253,.12);
+  --green:#3fb950;--green-l:rgba(63,185,80,.12);
+  --red:#f85149;--red-l:rgba(248,81,73,.12);
+  --yellow:#d29922;--yellow-l:rgba(210,153,34,.12);
+  --purple:#a371f7;--purple-l:rgba(163,113,247,.12);
+  --orange:#f0883e;--orange-l:rgba(240,136,62,.12);
+  --txt:#e6edf3;--txt2:#8b949e;--txt3:#484f58;
+  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--display:'Rajdhani',sans-serif;
+  --sidebar:230px;--top:52px;--r:8px;--r2:12px;
+}
+[data-theme="light"]{
+  --bg:#f6f8fa;--bg2:#ffffff;--bg3:#f0f2f5;--surface:#eaeef2;--surface2:#dde3ea;
+  --border:#d0d7de;--border2:#b9c0c9;
+  --teal:#008f85;--teal-d:#007068;--teal-l:rgba(0,143,133,.1);
+  --blue:#0969da;--blue-l:rgba(9,105,218,.1);
+  --green:#1a7f37;--green-l:rgba(26,127,55,.1);
+  --red:#cf222e;--red-l:rgba(207,34,46,.1);
+  --yellow:#9a6700;--yellow-l:rgba(154,103,0,.1);
+  --purple:#6639ba;--purple-l:rgba(102,57,186,.1);
+  --orange:#bc4c00;--orange-l:rgba(188,76,0,.1);
+  --txt:#1f2328;--txt2:#636c76;--txt3:#9198a1;
+}
+[data-theme="midnight"]{
+  --bg:#070b14;--bg2:#0d1526;--bg3:#111e35;--surface:#162240;--surface2:#1c2d52;
+  --border:#1e304d;--border2:#2a4268;
+  --teal:#00d4c8;--teal-d:#00a89e;--teal-l:rgba(0,212,200,.12);
+  --blue:#4d9fff;--blue-l:rgba(77,159,255,.12);
+  --green:#4dffb4;--green-l:rgba(77,255,180,.1);
+  --red:#ff5a6e;--red-l:rgba(255,90,110,.1);
+  --yellow:#ffd54f;--yellow-l:rgba(255,213,79,.1);
+  --purple:#ce93d8;--purple-l:rgba(206,147,216,.1);
+  --orange:#ffb74d;--orange-l:rgba(255,183,77,.1);
+  --txt:#e8eef8;--txt2:#7a8ba8;--txt3:#3a4a65;
+}
+[data-theme="forest"]{
+  --bg:#0a1208;--bg2:#0f1c0c;--bg3:#142210;--surface:#1a2e14;--surface2:#213a1a;
+  --border:#253d1c;--border2:#335228;
+  --teal:#4caf50;--teal-d:#388e3c;--teal-l:rgba(76,175,80,.12);
+  --blue:#81c784;--blue-l:rgba(129,199,132,.1);
+  --green:#a5d6a7;--green-l:rgba(165,214,167,.1);
+  --red:#ef9a9a;--red-l:rgba(239,154,154,.1);
+  --yellow:#fff176;--yellow-l:rgba(255,241,118,.1);
+  --purple:#ce93d8;--purple-l:rgba(206,147,216,.1);
+  --orange:#ffcc80;--orange-l:rgba(255,204,128,.1);
+  --txt:#e8f5e9;--txt2:#81a678;--txt3:#4a6b45;
+}
+[data-theme="sunset"]{
+  --bg:#1a0a00;--bg2:#261200;--bg3:#301800;--surface:#3d2000;--surface2:#4d2900;
+  --border:#522c00;--border2:#6b3d00;
+  --teal:#ff7043;--teal-d:#e64a19;--teal-l:rgba(255,112,67,.12);
+  --blue:#ffab40;--blue-l:rgba(255,171,64,.1);
+  --green:#a5d6a7;--green-l:rgba(165,214,167,.1);
+  --red:#ff8a80;--red-l:rgba(255,138,128,.1);
+  --yellow:#fff59d;--yellow-l:rgba(255,245,157,.1);
+  --purple:#ea80fc;--purple-l:rgba(234,128,252,.1);
+  --orange:#ffd180;--orange-l:rgba(255,209,128,.1);
+  --txt:#fff3e0;--txt2:#bcaaa4;--txt3:#7d5a4f;
+}
+/* ── THEME SWITCHER IN SIDEBAR ── */
+.theme-picker{padding:8px 10px;border-top:1px solid var(--border);margin-top:4px;}
+.theme-picker-lbl{font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.theme-dots{display:flex;gap:6px;flex-wrap:wrap;}
+.theme-dot-btn{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.theme-dot-btn:hover,.theme-dot-btn.active{border-color:var(--txt);transform:scale(1.15);}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:13px;line-height:1.5;}
+::-webkit-scrollbar{width:5px;height:5px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+a{color:var(--teal);text-decoration:none;}a:hover{text-decoration:underline;}
+/* ── LAYOUT ── */
+.shell{display:flex;height:100vh;overflow:hidden;}
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;overflow:hidden;}
+.sb-brand{padding:14px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;}
+.sb-logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 16px rgba(0,184,169,.3);}
+.sb-logo svg{width:17px;height:17px;color:#fff;}
+.sb-name{font-family:var(--display);font-size:15px;font-weight:700;color:var(--txt);line-height:1.1;}
+.sb-sub{font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;margin-top:1px;}
+.sb-nav{flex:1;overflow-y:auto;padding:6px;}
+.sb-sec{font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:1.2px;padding:10px 10px 3px;}
+.sb-link{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;color:var(--txt2);font-size:12px;font-weight:500;text-decoration:none;transition:all .15s;margin-bottom:1px;}
+.sb-link:hover{background:var(--surface);color:var(--txt);}
+.sb-link.active{background:var(--teal-l);color:var(--teal);border:1px solid rgba(0,184,169,.2);}
+.sb-link svg{width:14px;height:14px;flex-shrink:0;}
+.sb-foot{padding:10px 12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.sb-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.sb-uname{font-size:11px;font-weight:600;color:var(--txt);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-urole{font-size:9px;color:var(--txt3);}
+.sb-logout{background:none;border:none;cursor:pointer;color:var(--txt3);padding:3px;border-radius:5px;display:flex;transition:color .15s;}
+.sb-logout:hover{color:var(--red);}
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.topbar{height:var(--top);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0;}
+.topbar-title{font-family:var(--display);font-size:17px;font-weight:700;color:var(--txt);flex:1;}
+.content{flex:1;overflow-y:auto;padding:18px;}
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;}
+.card-hd{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.card-title{font-size:13px;font-weight:600;color:var(--txt);}
+.card-sub{font-size:11px;color:var(--txt3);margin-top:1px;}
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;position:relative;overflow:hidden;transition:border-color .2s;}
+.stat:hover{border-color:var(--border2);}
+.stat-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:9px;}
+.stat-icon svg{width:15px;height:15px;}
+.si-teal{background:var(--teal-l);color:var(--teal);}
+.si-blue{background:var(--blue-l);color:var(--blue);}
+.si-green{background:var(--green-l);color:var(--green);}
+.si-yellow{background:var(--yellow-l);color:var(--yellow);}
+.si-purple{background:var(--purple-l);color:var(--purple);}
+.stat-val{font-family:var(--display);font-size:24px;font-weight:700;color:var(--txt);line-height:1;}
+.stat-lbl{font-size:11px;color:var(--txt2);margin-top:2px;}
+/* ── BUTTONS ── */
+.btn{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;text-decoration:none;}
+.btn svg{width:12px;height:12px;flex-shrink:0;}
+.btn-primary{background:var(--teal);color:#fff;}
+.btn-primary:hover{background:var(--teal-d);filter:brightness(1.1);}
+.btn-secondary{background:var(--surface2);color:var(--txt);border:1px solid var(--border2);}
+.btn-secondary:hover{border-color:var(--teal);color:var(--teal);}
+.btn-danger{background:var(--red-l);color:var(--red);border:1px solid rgba(248,81,73,.25);}
+.btn-danger:hover{background:rgba(248,81,73,.25);}
+.btn-success{background:var(--green-l);color:var(--green);border:1px solid rgba(63,185,80,.25);}
+.btn-success:hover{background:rgba(63,185,80,.25);}
+.btn-blue{background:var(--blue-l);color:var(--blue);border:1px solid rgba(56,139,253,.25);}
+.btn-blue:hover{background:rgba(56,139,253,.25);}
+.btn-yellow{background:var(--yellow-l);color:var(--yellow);border:1px solid rgba(210,153,34,.25);}
+.btn-yellow:hover{background:rgba(210,153,34,.25);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn-xs{padding:3px 7px;font-size:11px;border-radius:5px;}
+.btn-full{width:100%;justify-content:center;}
+/* ── FORMS ── */
+.fg{margin-bottom:12px;}
+.fl{display:block;font-size:11px;font-weight:600;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;}
+.req{color:var(--red);}
+.fc{width:100%;padding:7px 11px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;font-family:var(--font);font-size:13px;color:var(--txt);outline:none;transition:border .2s;}
+.fc:focus{border-color:var(--teal);}
+.fc::placeholder{color:var(--txt3);}
+.fc:disabled,.fc[readonly]{background:var(--surface);color:var(--txt2);cursor:not-allowed;}
+select.fc{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;appearance:none;}
+textarea.fc{resize:vertical;min-height:70px;}
+.fpanel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:14px;}
+.fpanel-hd{padding:11px 15px;border-bottom:1px solid var(--border);background:rgba(0,184,169,.03);}
+.fpanel-title{font-size:13px;font-weight:600;color:var(--txt);}
+.fpanel-body{padding:15px;}
+.fpanel-foot{padding:10px 15px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;}
+/* ── TABLES ── */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:8px 13px;background:rgba(0,184,169,.04);font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;text-align:left;border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid rgba(48,54,61,.5);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(0,184,169,.03);}
+tbody td{padding:8px 13px;font-size:12px;color:var(--txt);vertical-align:middle;}
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;}
+.b-teal{background:var(--teal-l);color:var(--teal);}
+.b-blue{background:var(--blue-l);color:var(--blue);}
+.b-green{background:var(--green-l);color:var(--green);}
+.b-red{background:var(--red-l);color:var(--red);}
+.b-yellow{background:var(--yellow-l);color:var(--yellow);}
+.b-purple{background:var(--purple-l);color:var(--purple);}
+.b-gray{background:var(--surface2);color:var(--txt2);}
+/* ── ALERTS ── */
+.alert{padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:11px;display:flex;align-items:center;gap:7px;}
+.a-err{background:var(--red-l);color:var(--red);border:1px solid rgba(248,81,73,.2);}
+.a-ok{background:var(--green-l);color:var(--green);border:1px solid rgba(63,185,80,.2);}
+.a-info{background:var(--blue-l);color:var(--blue);border:1px solid rgba(56,139,253,.2);}
+.a-warn{background:var(--yellow-l);color:var(--yellow);border:1px solid rgba(210,153,34,.2);}
+/* ── SEARCH ── */
+.sbox{display:flex;align-items:center;gap:7px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;transition:border .2s;}
+.sbox:focus-within{border-color:var(--teal);}
+.sbox svg{width:12px;height:12px;color:var(--txt3);flex-shrink:0;}
+.sbox input{background:none;border:none;outline:none;font-family:var(--font);font-size:12px;color:var(--txt);width:170px;}
+.sbox input::placeholder{color:var(--txt3);}
+/* ── MODALS ── */
+.mover{position:fixed;inset:0;background:rgba(1,4,9,.75);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(3px);}
+.mover.open{display:flex;}
+.mbox{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.6);}
+.mbox-lg{width:740px;}
+.mhd{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg2);z-index:1;}
+.mtitle{font-size:13px;font-weight:700;color:var(--txt);}
+.mclose{width:24px;height:24px;border-radius:5px;background:var(--surface2);border:1px solid var(--border2);cursor:pointer;font-size:15px;color:var(--txt2);display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.mclose:hover{color:var(--red);border-color:var(--red);}
+.mbody{padding:16px;}
+.mfoot{padding:11px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;}
+/* ── MISC ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.mono{font-family:var(--mono);font-size:11px;color:var(--teal);}
+.mb3{margin-bottom:12px;}.mb4{margin-bottom:16px;}
+.divider{height:1px;background:var(--border);margin:12px 0;}
+/* ── WELCOME ── */
+.wbanner{background:linear-gradient(135deg,#0d2137,#0d2e1f,var(--bg3));border:1px solid var(--border);border-radius:var(--r2);padding:16px 20px;margin-bottom:14px;position:relative;overflow:hidden;}
+.wbanner::after{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(0,184,169,.07),transparent 70%);pointer-events:none;}
+.wb-title{font-family:var(--display);font-size:18px;font-weight:700;color:var(--txt);margin-bottom:3px;}
+.wb-sub{font-size:11px;color:var(--txt2);}
+/* ── STATUS PILL ── */
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;}
+/* ── PRINT ── */
+@media print{
+  .sidebar,.topbar,.no-print{display:none!important;}
+  .main{overflow:visible;}
+  .content{padding:0;}
+  body{background:#fff;color:#000;}
+}
+/* ── MOBILE OVERLAY ── */
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(1,4,9,.6);z-index:199;backdrop-filter:blur(2px);}
+.mob-overlay.open{display:block;}
+/* ── MOBILE TOPBAR TOGGLE ── */
+.mob-menu-btn{display:none;background:none;border:none;cursor:pointer;color:var(--txt2);padding:5px;border-radius:6px;align-items:center;justify-content:center;transition:color .15s;-webkit-tap-highlight-color:transparent;}
+.mob-menu-btn:hover{color:var(--txt);}
+.mob-menu-btn svg{width:18px;height:18px;}
+/* ── RESPONSIVE: TABLET ── */
+@media(max-width:900px){
+  :root{--sidebar:200px;}
+  .stats{grid-template-columns:repeat(3,1fr);}
+  .grid2,.frow{grid-template-columns:1fr;}
+  .frow3{grid-template-columns:1fr 1fr;}
+}
+/* ── RESPONSIVE: MOBILE ── */
+@media(max-width:640px){
+  :root{--sidebar:240px;}
+  /* Shell: allow normal scroll on mobile */
+  .shell{height:auto;min-height:100vh;overflow:visible;flex-direction:column;}
+  /* Main: full height column layout */
+  .main{overflow:visible;min-height:calc(100vh - var(--top));width:100%;}
+  /* Content: natural scroll */
+  .content{overflow:visible;padding:10px;}
+  .mob-menu-btn{display:flex;}
+  /* Sidebar: slide in/out */
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;z-index:200;
+    transform:translateX(-100%);transition:transform .25s ease;
+    box-shadow:6px 0 24px rgba(0,0,0,.5);
+  }
+  .sidebar.mob-open{transform:translateX(0);}
+  /* Main takes full width */
+  .main{width:100%;}
+  /* Topbar: sticky on mobile */
+  .topbar{padding:0 12px;gap:8px;position:sticky;top:0;z-index:100;}
+  .topbar-title{font-size:14px;}
+  /* Content */
+  .content{padding:10px;}
+  /* Stats: 2 cols on mobile */
+  .stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;}
+  .stat{padding:10px;}
+  .stat-val{font-size:20px;}
+  /* Grids collapse to 1 col */
+  .grid2,.grid3,.frow,.frow3{grid-template-columns:1fr;}
+  /* Cards */
+  .card-hd{flex-wrap:wrap;gap:6px;padding:9px 12px;}
+  /* Tables: horizontal scroll */
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{min-width:500px;}
+  /* Buttons in topbar stack */
+  .topbar [style*="display:flex"]{gap:5px;}
+  .btn{padding:5px 10px;font-size:11px;}
+  .btn-sm{padding:4px 8px;font-size:11px;}
+  /* Forms */
+  .fpanel-body{padding:10px;}
+  .fpanel-foot{flex-wrap:wrap;gap:6px;}
+  .fpanel-foot .btn{flex:1;justify-content:center;}
+  /* Modals */
+  .mbox{width:95vw;margin:10px;max-height:85vh;}
+  .mbox-lg{width:95vw;}
+  .mbody{padding:12px;}
+  .mhd{padding:10px 12px;}
+  /* Search box */
+  .sbox input{width:120px;}
+  /* Welcome banner */
+  .wbanner{padding:12px 14px;}
+  .wbanner [style*="justify-content:space-between"]{flex-direction:column;gap:6px;}
+  .wb-title{font-size:15px;}
+  /* Test grid in booking */
+  .test-grid{grid-template-columns:1fr;}
+  /* Sidebar nav text visible */
+  .sb-link{font-size:13px;padding:9px 12px;}
+  .sb-link svg{width:16px;height:16px;}
+  /* Footer in sidebar */
+  .sb-foot{padding:12px 14px;}
+  .sb-uname{font-size:12px;}
+  /* Theme picker */
+  .theme-picker{padding:10px 12px;}
+  .theme-dot-btn{width:24px;height:24px;}
+  /* Hide desktop-only elements in topbar */
+  .topbar-desktop-only{display:none;}
+}
+@media(max-width:380px){
+  .stats{grid-template-columns:1fr 1fr;}
+  .stat-val{font-size:18px;}
+  .content{padding:8px;}
+}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="shell">
+<div class="mob-overlay" id="mob-overlay" onclick="toggleSidebar()"></div>
+{% if user.is_authenticated %}
+<aside class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo" style="overflow:hidden;padding:0;">
+      {% if LAB and LAB.logo_image %}
+        <img src="{{ LAB.logo_image.url }}" alt="logo" style="width:34px;height:34px;object-fit:cover;border-radius:8px;">
+      {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2"/><path d="M8.5 2h7"/>
+        </svg>
+      {% endif %}
+    </div>
+    <div><div class="sb-name">{{ LAB_NAME }}</div><div class="sb-sub">{{ APP_VERSION }}</div></div>
+  </div>
+  <nav class="sb-nav">
+    {% if user_role != 'patient' %}
+    <div class="sb-sec">Main</div>
+    <a href="{% url 'dashboard' %}" class="sb-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+    </a>
+    {% if user_role == 'admin' or user_role == 'staff' %}
+    <a href="{% url 'booking_new' %}" class="sb-link {% if 'booking_new' in request.resolver_match.url_name %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>New Booking
+    </a>
+    <a href="{% url 'patients' %}" class="sb-link {% if 'patient' in request.resolver_match.url_name %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Patients
+    </a>
+    {% endif %}
+    <a href="{% url 'reports' %}" class="sb-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>All Reports
+    </a>
+    <div class="sb-sec">Setup</div>
+    {% if user_role == 'admin' or user_role == 'staff' %}
+    <a href="{% url 'doctors' %}" class="sb-link {% if 'doctor' in request.resolver_match.url_name %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Doctors
+    </a>
+    {% endif %}
+    {% if user_role == 'admin' %}
+    <a href="{% url 'staff_list' %}" class="sb-link {% if 'staff' in request.resolver_match.url_name %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Staff &amp; Users
+    </a>
+    {% endif %}
+    <a href="{% url 'test_profiles' %}" class="sb-link {% if request.resolver_match.url_name in 'test_profiles,test_profile_edit' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Test Profiles
+    </a>
+    <a href="{% url 'tests' %}" class="sb-link {% if request.resolver_match.url_name == 'tests' or request.resolver_match.url_name == 'test_params' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2"/><path d="M8.5 2h7"/></svg>Test Master
+    </a>
+    <a href="{% url 'rate_list' %}" class="sb-link {% if request.resolver_match.url_name == 'rate_list' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>Rate List
+    </a>
+
+    <div class="sb-sec">Tools</div>
+    <a href="{% url 'advanced_search' %}" class="sb-link {% if request.resolver_match.url_name == 'advanced_search' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search
+    </a>
+    <a href="{% url 'chatbot' %}" class="sb-link {% if request.resolver_match.url_name == 'chatbot' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Help Bot
+    </a>
+
+    {% if user_role in 'admin,staff' %}
+    <div class="sb-sec" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Pro Suite</span>
+      {% if request.session.pro_suite_unlocked %}
+      <a href="{% url 'pro_suite_logout' %}" title="Lock Pro Suite" style="color:var(--green);font-size:9px;font-weight:700;text-decoration:none;padding:1px 5px;background:var(--green-l);border-radius:3px">● OPEN</a>
+      {% else %}
+      <a href="{% url 'pro_suite_lock' %}?next=/payments/" title="Unlock Pro Suite" style="color:var(--txt3);font-size:9px;font-weight:700;text-decoration:none;padding:1px 5px;background:var(--surface);border-radius:3px">🔒 PIN</a>
+      {% endif %}
+    </div>
+    <a href="{% url 'payments_list' %}" class="sb-link {% if request.resolver_match.url_name == 'payments_list' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>PayTrack
+    </a>
+    <a href="{% url 'insurance_claims' %}" class="sb-link {% if request.resolver_match.url_name in 'insurance_claims,insurance_claim_detail,insurance_claim_new' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Claim Manager
+    </a>
+    <a href="{% url 'notifications' %}" class="sb-link {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 15.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.9 4.8h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 12a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 18.92z"/></svg>MessageHub
+    </a>
+    {% endif %}
+
+    {% if user_role == 'admin' %}
+    <a href="{% url 'branches' %}" class="sb-link {% if request.resolver_match.url_name == 'branches' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>BranchNet
+    </a>
+    <a href="{% url 'analyser_list' %}" class="sb-link {% if request.resolver_match.url_name == 'analyser_list' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>AutoImport
+    </a>
+    <a href="{% url 'hl7_fhir_log' %}" class="sb-link {% if request.resolver_match.url_name == 'hl7_fhir_log' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>ConnectBridge
+    </a>
+
+    <div class="sb-sec">Finance</div>
+    <a href="{% url 'revenue_report' %}" class="sb-link {% if request.resolver_match.url_name == 'revenue_report' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Revenue
+    </a>
+    <a href="{% url 'expenditures' %}" class="sb-link {% if request.resolver_match.url_name == 'expenditures' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Expenditures
+    </a>
+    <a href="{% url 'doctor_commissions' %}" class="sb-link {% if request.resolver_match.url_name == 'doctor_commissions' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Dr. Commission
+    </a>
+
+    <div class="sb-sec">Lab Ops</div>
+    <a href="{% url 'home_collections' %}" class="sb-link {% if request.resolver_match.url_name == 'home_collections' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home Collection
+    </a>
+    <a href="{% url 'inventory' %}" class="sb-link {% if request.resolver_match.url_name == 'inventory' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Inventory
+    </a>
+    <a href="{% url 'qc_log' %}" class="sb-link {% if request.resolver_match.url_name == 'qc_log' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>QC Log
+    </a>
+    <a href="{% url 'critical_alerts' %}" class="sb-link {% if request.resolver_match.url_name == 'critical_alerts' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Critical Alerts
+    </a>
+    <a href="{% url 'lab_settings' %}" class="sb-link {% if request.resolver_match.url_name == 'lab_settings' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Lab Settings
+    </a>
+    {% endif %}
+
+    <!-- ── THEME PICKER ── -->
+    <div class="theme-picker">
+      <div class="theme-picker-lbl">🎨 Theme</div>
+      <div class="theme-dots">
+        <div class="theme-dot-btn" id="tdark"     onclick="setAppTheme('dark')"     style="background:#00b8a9" title="Dark"></div>
+        <div class="theme-dot-btn" id="tlight"    onclick="setAppTheme('light')"    style="background:#0969da" title="Light"></div>
+        <div class="theme-dot-btn" id="tsystem"   onclick="setAppTheme('system')"   style="background:linear-gradient(135deg,#161b22 50%,#f6f8fa 50%);border:1px solid #555" title="System"></div>
+        <div class="theme-dot-btn" id="tmidnight" onclick="setAppTheme('midnight')" style="background:#00d4c8" title="Midnight Blue"></div>
+        <div class="theme-dot-btn" id="tforest"   onclick="setAppTheme('forest')"   style="background:#4caf50" title="Forest Green"></div>
+        <div class="theme-dot-btn" id="tsunset"   onclick="setAppTheme('sunset')"   style="background:#ff7043" title="Sunset Orange"></div>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="sb-sec">My Account</div>
+    <a href="{% url 'my_reports' %}" class="sb-link {% if request.resolver_match.url_name == 'my_reports' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>My Reports
+    </a>
+    {% endif %}
+  </nav>
+  <div class="sb-foot">
+    <div class="sb-avatar">{{ request.user.username.0|upper }}</div>
+    <div style="flex:1;min-width:0">
+      <div class="sb-uname">{{ request.user.get_full_name|default:request.user.username }}</div>
+      <div class="sb-urole">{{ request.user.profile.get_role_display }}</div>
+    </div>
+    <a href="{% url 'logout' %}" class="sb-logout" title="Logout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </a>
+  </div>
+</aside>
+{% endif %}
+<div class="main">
+  {% if user.is_authenticated %}
+  <div class="topbar no-print">
+    <button class="mob-menu-btn" id="mob-menu-btn" onclick="toggleSidebar()" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+    <div style="display:flex;align-items:center;gap:8px">{% block topbar_actions %}{% endblock %}</div>
+  </div>
+  {% endif %}
+  <div class="content">
+    {% for msg in messages %}
+    <div class="alert {% if msg.tags == 'error' %}a-err{% elif msg.tags == 'success' %}a-ok{% elif msg.tags == 'warning' %}a-warn{% else %}a-info{% endif %} no-print">{{ msg }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+</div>
+{% block extra_js %}{% endblock %}
+<script>
+// ── MOBILE SIDEBAR ──
+function toggleSidebar(){
+  var sb=document.getElementById('sidebar');
+  var ov=document.getElementById('mob-overlay');
+  if(!sb||!ov)return;
+  var isOpen=sb.classList.contains('mob-open');
+  if(isOpen){
+    sb.classList.remove('mob-open');
+    ov.classList.remove('open');
+    document.body.style.overflow='';
+  } else {
+    sb.classList.add('mob-open');
+    ov.classList.add('open');
+    document.body.style.overflow='hidden';
+  }
+}
+// Close sidebar on nav link click (mobile)
+document.addEventListener('DOMContentLoaded',function(){
+  var links=document.querySelectorAll('.sb-link');
+  links.forEach(function(l){
+    l.addEventListener('click',function(){
+      if(window.innerWidth<=640){
+        var sb=document.getElementById('sidebar');
+        var ov=document.getElementById('mob-overlay');
+        if(sb)sb.classList.remove('mob-open');
+        if(ov)ov.classList.remove('open');
+        document.body.style.overflow='';
+      }
+    });
+  });
+  // Close on resize if desktop
+  window.addEventListener('resize',function(){
+    if(window.innerWidth>640){
+      var sb=document.getElementById('sidebar');
+      var ov=document.getElementById('mob-overlay');
+      if(sb)sb.classList.remove('mob-open');
+      if(ov)ov.classList.remove('open');
+      document.body.style.overflow='';
+    }
+  });
+});
+(function(){
+  var t=localStorage.getItem('ipl-app-theme')||'dark';
+  applyAppTheme(t);
+  markActive(t);
+})();
+function applyAppTheme(t){
+  var h=document.documentElement;
+  if(t==='system'){
+    var d=window.matchMedia('(prefers-color-scheme:dark)').matches;
+    h.setAttribute('data-theme',d?'dark':'light');
+  } else {
+    h.setAttribute('data-theme',t);
+  }
+}
+function setAppTheme(t){
+  localStorage.setItem('ipl-app-theme',t);
+  applyAppTheme(t);
+  markActive(t);
+}
+function markActive(t){
+  var ids=['dark','light','system','midnight','forest','sunset'];
+  ids.forEach(function(id){
+    var el=document.getElementById('t'+id);
+    if(el) el.classList.toggle('active', id===t);
+  });
+}
+// Apply on load
+window.addEventListener('DOMContentLoaded',function(){
+  var t=localStorage.getItem('ipl-app-theme')||'dark';
+  markActive(t);
+});
+</script>
+</body>
+</html>

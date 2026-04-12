@@ -1,0 +1,170 @@
+{% extends 'lab/base.html' %}
+{% block title %}Staff & Doctor Users{% endblock %}
+{% block page_title %}Staff & Doctor User Management{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-primary btn-sm" onclick="openModal('modal-add-staff')">+ Add Staff / Doctor</button>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:14px;padding:12px 16px;background:linear-gradient(135deg,rgba(56,139,253,.07),rgba(0,184,169,.04));border:1px solid var(--border2)">
+  <div style="font-size:11px;color:var(--txt2);line-height:1.7">
+    <strong style="color:var(--txt)">ℹ️ How it works:</strong>
+    Admin adds staff/doctor with their mobile number as username and sets a password.
+    Each user gets a unique access code automatically.
+    <strong>Staff:</strong> can login, download any report, edit patient name — cannot edit test results.
+    <strong>Doctor:</strong> can login, download only their own referred patients' reports — cannot edit anything.
+  </div>
+</div>
+
+{% if not staff_users %}
+<div class="card" style="text-align:center;padding:48px 24px;color:var(--txt3)">
+  <div style="font-size:32px;margin-bottom:12px">👥</div>
+  <div style="font-size:14px;font-weight:600;color:var(--txt2);margin-bottom:6px">No staff or doctor users added yet</div>
+  <div style="font-size:12px">Click <strong>+ Add Staff / Doctor</strong> above to create the first user.</div>
+</div>
+{% else %}
+<div class="grid3">
+{% for profile in staff_users %}
+<div class="card" style="padding:16px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,{% if profile.role == 'doctor' %}#6a1b9a,#9c27b0{% else %}#0d47a1,#1976d2{% endif %});display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0">
+      {{ profile.user.first_name.0|upper|default:profile.user.username.0|upper }}
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--txt)">{{ profile.user.first_name|default:profile.user.username }}</div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:1px">
+        {% if profile.role == 'doctor' %}<span style="color:#9c27b0">👨‍⚕️ Doctor</span>{% else %}<span style="color:#1976d2">🧪 Lab Staff</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--txt2);margin-bottom:12px">
+    <div>📱 Login: <strong style="color:var(--txt);font-family:var(--mono)">{{ profile.user.username }}</strong></div>
+    <div style="margin-top:5px;padding:7px 10px;background:var(--surface2);border-radius:7px;display:flex;align-items:center;gap:6px">
+      <span style="font-size:11px;color:var(--txt3)">Access Code:</span>
+      <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--teal);letter-spacing:1px">{{ profile.unique_code|default:"—" }}</span>
+    </div>
+    <div style="font-size:10px;color:var(--txt3);margin-top:2px">Share this code with the user — only their reports accessible</div>
+  </div>
+
+  <div style="display:flex;gap:7px;flex-wrap:wrap">
+    <button class="btn btn-sm" style="background:var(--surface2);color:var(--txt);font-size:11px;flex:1"
+            onclick="openResetPw({{ profile.pk }}, '{{ profile.user.first_name|default:profile.user.username|escapejs }}')">
+      🔒 Reset Password
+    </button>
+    <a href="{% url 'staff_delete' profile.pk %}"
+       onclick="return confirm('Delete user \'{{ profile.user.first_name|default:profile.user.username|escapejs }}\'? This action cannot be undone.')"
+       class="btn btn-sm" style="background:rgba(248,81,73,.1);color:var(--red);font-size:11px">
+      🗑
+    </a>
+  </div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+
+<!-- ── Add Staff Modal ── -->
+<div class="mover" id="modal-add-staff">
+  <div class="mbox" style="max-width:440px">
+    <div class="mhd">
+      <div class="mtitle">➕ Add Staff / Doctor User</div>
+      <button class="mclose" onclick="closeModal('modal-add-staff')">×</button>
+    </div>
+    <form method="post" action="{% url 'staff_add' %}">
+      {% csrf_token %}
+      <div style="padding:18px;display:flex;flex-direction:column;gap:13px">
+
+        <div class="fg">
+          <label class="fl">Full Name <span style="color:var(--red)">*</span></label>
+          <input name="full_name" class="fc" placeholder="e.g. Rahul Kumar" required autocomplete="off">
+        </div>
+
+        <div class="fg">
+          <label class="fl">Role <span style="color:var(--red)">*</span></label>
+          <select name="role" class="fc" id="role-select" onchange="updateRoleHint(this.value)">
+            <option value="staff">🧪 Lab Staff</option>
+            <option value="doctor">👨‍⚕️ Doctor</option>
+          </select>
+          <div id="role-hint" style="font-size:10px;color:var(--txt3);margin-top:4px;padding:6px 8px;background:var(--surface2);border-radius:5px">
+            Staff can: login, download any report, edit patient name. Cannot edit test results.
+          </div>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Mobile Number <span style="color:var(--red)">*</span></label>
+          <input name="mobile" class="fc" placeholder="e.g. 9876543210" required maxlength="15" autocomplete="off">
+          <div style="font-size:10px;color:var(--txt3);margin-top:3px">This will be the login username.</div>
+        </div>
+
+        <div class="fg">
+          <label class="fl">Password <span style="color:var(--red)">*</span></label>
+          <input name="password" type="password" class="fc" placeholder="Set a strong password (min 6 chars)" required minlength="6" autocomplete="new-password">
+        </div>
+
+        <div style="padding:8px 10px;background:rgba(56,139,253,.06);border:1px solid rgba(56,139,253,.15);border-radius:7px;font-size:10px;color:var(--txt2)">
+          💡 A unique access code (STF-XXXXXX or DOC-XXXXXX) will be auto-generated after saving.
+        </div>
+      </div>
+
+      <div class="mfoot">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('modal-add-staff')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Add User</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Reset Password Modal ── -->
+<div class="mover" id="modal-reset-pw">
+  <div class="mbox" style="max-width:380px">
+    <div class="mhd">
+      <div class="mtitle">🔒 Reset Password</div>
+      <button class="mclose" onclick="closeModal('modal-reset-pw')">×</button>
+    </div>
+    <form method="post" id="reset-pw-form" action="">
+      {% csrf_token %}
+      <div style="padding:18px;display:flex;flex-direction:column;gap:13px">
+        <div class="fg">
+          <label class="fl">New Password for <strong id="reset-pw-name" style="color:var(--teal)"></strong></label>
+          <input name="password" type="password" class="fc" placeholder="Enter new password" required minlength="6" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="mfoot">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('modal-reset-pw')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Update Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+function openResetPw(pk, name) {
+  document.getElementById('reset-pw-name').textContent = name;
+  document.getElementById('reset-pw-form').action = '/staff/' + pk + '/reset-password/';
+  openModal('modal-reset-pw');
+}
+
+function updateRoleHint(role) {
+  const hints = {
+    staff: 'Staff can: login, download any report, edit patient name. Cannot edit test results.',
+    doctor: 'Doctor can: login, download only their own referred patients\u2019 reports. Cannot edit anything.'
+  };
+  document.getElementById('role-hint').textContent = hints[role] || '';
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.mover').forEach(el => {
+  el.addEventListener('click', function(e) {
+    if (e.target === this) closeModal(this.id);
+  });
+});
+</script>
+{% endblock %}

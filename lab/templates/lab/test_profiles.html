@@ -1,0 +1,217 @@
+{% extends 'lab/base.html' %}
+{% block title %}Test Profiles — IPL{% endblock %}
+{% block page_title %}Test Profiles{% endblock %}
+{% block extra_head %}
+<style>
+.profile-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;transition:border-color .2s;}
+.profile-card:hover{border-color:var(--border2);}
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;}
+.test-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:10px;font-weight:600;color:var(--txt2);margin:2px;}
+.discount-badge{background:var(--green-l);color:var(--green);border:1px solid rgba(63,185,80,.2);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+#test-checkboxes{max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px;}
+.test-cb-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:4px;cursor:pointer;transition:background .1s;}
+.test-cb-item:hover{background:var(--surface);}
+.test-cb-item label{font-size:12px;color:var(--txt);cursor:pointer;flex:1;}
+.test-cb-item .price{font-size:11px;color:var(--teal);font-weight:600;}
+.cat-header{padding:4px 8px;font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;background:var(--bg3);border-radius:4px;margin:4px 0 2px;}
+</style>
+{% endblock %}
+{% block topbar_actions %}
+{% if user_role == 'admin' %}
+<button class="btn btn-primary btn-sm" onclick="openModal('modal-add-profile')">+ New Profile</button>
+{% endif %}
+<a href="{% url 'tests' %}" class="btn btn-secondary btn-sm">Test Master</a>
+{% endblock %}
+{% block content %}
+
+<div class="wbanner">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="wb-title">🧬 Test Profiles</div>
+      <div class="wb-sub">Bundles like Fever Profile, LFT, KFT, Diabetes Profile — select multiple tests in one click during booking</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--teal)">{{ profiles|length }}</div>
+      <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px">Total Profiles</div>
+    </div>
+  </div>
+</div>
+
+{% if not profiles %}
+<div style="background:var(--teal-l);border:1px solid rgba(0,184,169,.2);border-radius:var(--r2);padding:14px 18px;margin-bottom:14px">
+  <strong style="color:var(--teal)">💡 Test Profiles kya hain?</strong>
+  <span style="color:var(--txt2);font-size:12px"> Define common test bundles like <strong>Fever Profile</strong> (CBC + Typhidot + Malaria), <strong>LFT 1.1</strong>, <strong>KFT</strong>, <strong>Diabetes Profile</strong> etc. When a profile is selected in a new booking, all tests are added automatically.</span>
+</div>
+{% endif %}
+
+<div class="profile-grid">
+  {% for p in profiles %}
+  <div class="profile-card">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+      <div>
+        {% if p.short_code %}<span style="background:var(--teal-l);color:var(--teal);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;font-family:var(--mono)">{{ p.short_code }}</span>{% endif %}
+        <div style="font-size:14px;font-weight:700;color:var(--txt);margin-top:4px">{{ p.name }}</div>
+        <div style="font-size:10px;color:var(--txt3)">{{ p.profile_code }}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--display);font-size:20px;font-weight:700;color:var(--teal)">₹{{ p.price }}</div>
+        {% if p.discount_pct > 0 %}
+        <span class="discount-badge">{{ p.discount_pct }}% off</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if p.description %}
+    <div style="font-size:11px;color:var(--txt2);margin-bottom:8px">{{ p.description }}</div>
+    {% endif %}
+    <div style="margin-bottom:10px;min-height:28px">
+      {% for t in p.tests.all %}
+      <span class="test-chip">{{ t.name }}</span>
+      {% empty %}
+      <span style="font-size:11px;color:var(--txt3)">No tests assigned</span>
+      {% endfor %}
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)">
+      <span style="font-size:10px;color:var(--txt3)">{{ p.test_count }} tests · MRP ₹{{ p.total_mrp }}</span>
+      <div style="display:flex;gap:6px">
+        {% if not p.is_active %}<span class="badge" style="background:var(--red-l);color:var(--red)">Inactive</span>{% endif %}
+        {% if user_role == 'admin' %}
+        <a href="{% url 'test_profile_edit' p.pk %}" class="btn btn-secondary btn-xs">Edit</a>
+        <form method="post" action="{% url 'test_profile_delete' p.pk %}" style="display:inline" onsubmit="return confirm('Delete profile {{ p.name }}?')">
+          {% csrf_token %}<button class="btn btn-danger btn-xs">Del</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div style="grid-column:1/-1;text-align:center;padding:60px 20px">
+    <div style="font-size:48px;margin-bottom:12px">🧬</div>
+    <div style="font-size:15px;font-weight:600;color:var(--txt2)">No profiles found yet</div>
+    <div style="font-size:12px;color:var(--txt3);margin-top:6px;margin-bottom:16px">Use the + New Profile button to create one</div>
+    {% if user_role == 'admin' %}
+    <button class="btn btn-primary" onclick="openModal('modal-add-profile')">+ Create First Profile</button>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Sample profiles suggestion -->
+{% if not profiles and user_role == 'admin' %}
+<div class="card" style="margin-top:16px">
+  <div class="card-hd"><div class="card-title">📋 Common Profiles — Quick Start</div></div>
+  <div style="padding:14px;display:flex;flex-wrap:wrap;gap:8px">
+  {% for name in quick_profiles %}
+    <button onclick="document.getElementById('profile-name').value='{{ name }}';openModal('modal-add-profile')" class="btn btn-secondary btn-sm">{{ name }}</button>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if user_role == 'admin' %}
+<!-- Add Profile Modal -->
+<div class="mover" id="modal-add-profile">
+  <div class="mbox mbox-lg">
+    <div class="mhd">
+      <div class="mtitle">🧬 New Test Profile</div>
+      <button class="mclose" onclick="closeModal('modal-add-profile')">×</button>
+    </div>
+    <form method="post" action="{% url 'test_profile_add' %}">
+      {% csrf_token %}
+      <div class="mbody">
+        <div class="frow">
+          <div class="fg">
+            <label class="fl">Profile Name <span class="req">*</span></label>
+            <input class="fc" name="name" id="profile-name" placeholder="e.g. Fever Profile, LFT 1.1" required>
+          </div>
+          <div class="fg">
+            <label class="fl">Short Code</label>
+            <input class="fc" name="short_code" placeholder="e.g. FP, LFT, KFT" style="text-transform:uppercase">
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fg">
+            <label class="fl">Profile Price (₹)</label>
+            <input class="fc" type="number" name="price" id="profile-price" placeholder="0" min="0" oninput="updateDiscount()">
+          </div>
+          <div class="fg">
+            <label class="fl">Sort Order</label>
+            <input class="fc" type="number" name="sort_order" value="0" min="0">
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Description</label>
+          <input class="fc" name="description" placeholder="e.g. Includes CBC, Typhidot, Malaria, Widal">
+        </div>
+
+        <div class="fg">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <label class="fl" style="margin-bottom:0">Select Tests for this Profile</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="text" id="test-search" placeholder="Search test..." style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--txt);font-size:11px;width:150px;outline:none" oninput="filterTests(this.value)">
+              <span id="selected-count" style="font-size:11px;color:var(--teal);font-weight:600">0 selected</span>
+            </div>
+          </div>
+          <div id="test-checkboxes">
+            {% regroup all_tests by category as cat_list %}
+            {% for cat in cat_list %}
+            <div class="cat-header">{{ cat.grouper }}</div>
+            {% for t in cat.list %}
+            <div class="test-cb-item" data-name="{{ t.name|lower }}">
+              <input type="checkbox" name="tests" value="{{ t.pk }}" id="tst{{ t.pk }}" onchange="updateSelectedCount();updateMRP()">
+              <label for="tst{{ t.pk }}">{{ t.name }}</label>
+              <span class="price">₹{{ t.price }}</span>
+            </div>
+            {% endfor %}
+            {% endfor %}
+          </div>
+          <div style="margin-top:6px;padding:8px;background:var(--bg3);border-radius:6px;display:flex;gap:16px;font-size:11px">
+            <span style="color:var(--txt2)">Sum MRP: <strong id="mrp-sum" style="color:var(--txt)">₹0</strong></span>
+            <span style="color:var(--txt2)">Profile Price: <strong id="profile-price-display" style="color:var(--teal)">₹0</strong></span>
+            <span style="color:var(--txt2)">Savings: <strong id="discount-display" style="color:var(--green)">₹0 (0%)</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="mfoot">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-profile')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Profile</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block extra_js %}
+<script>
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mover').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+const testPrices = {
+  {% for t in all_tests %}'{{ t.pk }}': {{ t.price }},{% endfor %}
+};
+
+function updateSelectedCount(){
+  const n = document.querySelectorAll('#test-checkboxes input:checked').length;
+  document.getElementById('selected-count').textContent = n + ' selected';
+}
+function updateMRP(){
+  let mrp = 0;
+  document.querySelectorAll('#test-checkboxes input:checked').forEach(cb => { mrp += (testPrices[cb.value]||0); });
+  const pp = parseFloat(document.getElementById('profile-price').value||0);
+  document.getElementById('mrp-sum').textContent = '₹' + mrp;
+  document.getElementById('profile-price-display').textContent = '₹' + pp;
+  const saving = mrp - pp;
+  const pct = mrp > 0 ? (saving/mrp*100).toFixed(1) : 0;
+  document.getElementById('discount-display').textContent = '₹' + (saving>0?saving.toFixed(0):0) + ' (' + (saving>0?pct:0) + '%)';
+}
+document.getElementById('profile-price')?.addEventListener('input', updateMRP);
+
+function filterTests(q){
+  q = q.toLowerCase();
+  document.querySelectorAll('.test-cb-item').forEach(el => {
+    el.style.display = (!q || el.dataset.name.includes(q)) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

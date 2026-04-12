@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Register — Indian Path-Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--border:#30363d;--border2:#444c56;--teal:#00b8a9;--teal-d:#009688;--red:#f85149;--txt:#e6edf3;--txt2:#8b949e;--txt3:#484f58;--font:'Inter',system-ui,sans-serif;--display:'Rajdhani',sans-serif;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);min-height:100vh;display:flex;align-items:center;justify-content:center;background-image:linear-gradient(rgba(48,54,61,.2) 1px,transparent 1px),linear-gradient(90deg,rgba(48,54,61,.2) 1px,transparent 1px);background-size:40px 40px;}
+.box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:500px;max-width:96vw;padding:36px;box-shadow:0 24px 64px rgba(0,0,0,.5);}
+.logo-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.logo-icon{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--teal),#388bfd);display:flex;align-items:center;justify-content:center;box-shadow:0 0 18px rgba(0,184,169,.3);}
+.logo-icon svg{width:21px;height:21px;color:#fff;}
+.logo-name{font-family:var(--display);font-size:18px;font-weight:700;color:var(--txt);}
+.logo-sub{font-size:10px;color:var(--txt3);}
+h2{font-family:var(--display);font-size:20px;font-weight:700;color:var(--txt);margin-bottom:3px;}
+.sub{font-size:12px;color:var(--txt2);margin-bottom:20px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px;}
+.fg{margin-bottom:13px;}
+.fl{display:block;font-size:11px;font-weight:600;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px;}
+.fc{width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;font-family:var(--font);font-size:13px;color:var(--txt);outline:none;transition:border .2s;}
+.fc:focus{border-color:var(--teal);}
+.fc::placeholder{color:var(--txt3);}
+.btn-reg{width:100%;padding:10px;border-radius:7px;border:none;cursor:pointer;font-size:14px;font-weight:600;font-family:var(--font);background:var(--teal);color:#fff;transition:all .2s;margin-top:4px;}
+.btn-reg:hover{background:var(--teal-d);}
+.alert{padding:8px 11px;border-radius:6px;font-size:12px;margin-bottom:12px;background:rgba(248,81,73,.1);color:var(--red);border:1px solid rgba(248,81,73,.2);}
+.note{background:rgba(210,153,34,.07);border:1px solid rgba(210,153,34,.2);border-radius:7px;padding:9px 12px;font-size:11px;color:#d29922;margin-bottom:18px;}
+.link-row{text-align:center;margin-top:16px;font-size:12px;color:var(--txt2);}
+.link-row a{color:var(--teal);font-weight:600;}
+@media(max-width:540px){
+  body{align-items:flex-start;padding:16px;}
+  .box{width:100%;max-width:100%;padding:20px;border-radius:10px;}
+  .frow{grid-template-columns:1fr;}
+  h2{font-size:17px;}
+}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo-row">
+    <div class="logo-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2"/><path d="M8.5 2h7"/></svg></div>
+    <div><div class="logo-name">Indian Path-Lab</div><div class="logo-sub">Patient Registration Portal</div></div>
+  </div>
+  <h2>Create Account</h2>
+  <div class="sub">Register to access your lab reports online</div>
+  <div class="note">⚠️ After registering, ask lab staff to link your account to your patient record.</div>
+  {% if messages %}{% for m in messages %}<div class="alert">{{ m }}</div>{% endfor %}{% endif %}
+  <form method="post">{% csrf_token %}
+    <div class="frow"><div><label class="fl">First Name</label><input class="fc" name="first_name"></div><div><label class="fl">Last Name</label><input class="fc" name="last_name"></div></div>
+    <div class="fg"><label class="fl">Username *</label><input class="fc" name="username" required></div>
+    <div class="fg"><label class="fl">Email</label><input class="fc" name="email" type="email"></div>
+    <div class="frow"><div><label class="fl">Password *</label><input class="fc" name="password" type="password" required></div><div><label class="fl">Confirm Password *</label><input class="fc" name="password2" type="password" required></div></div>
+    <button class="btn-reg" type="submit">Create Account →</button>
+  </form>
+  <div class="link-row">Already have an account? <a href="{% url 'login' %}">Sign in</a></div>
+</div>
+</body>
+</html>

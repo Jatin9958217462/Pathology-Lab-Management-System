@@ -1,0 +1,118 @@
+{% extends 'lab/base.html' %}
+{% block title %}Doctor Commissions — IPL{% endblock %}
+{% block page_title %}Doctor Commissions{% endblock %}
+{% block topbar_actions %}
+<button class="btn btn-primary btn-sm" onclick="openModal('modal-gen')">+ Generate Commission</button>
+{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div><div class="wb-title">💊 Doctor Commissions</div><div class="wb-sub">Monthly referral commission tracking — auto-generated on booking, mark paid on payment received</div></div>
+</div>
+
+<div class="card">
+  <div class="tw"><table>
+    <thead>
+      <tr>
+        <th>Month</th><th>Doctor</th><th>Total Billing</th><th>Commission %</th>
+        <th>Commission Amt</th><th>Bookings</th><th>Status</th><th>Paid On</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in commissions %}
+      <tr>
+        <td style="font-weight:600;white-space:nowrap">{{ c.month|date:"M Y" }}</td>
+        <td>
+          <strong>Dr. {{ c.doctor.name }}</strong>
+          {% if c.doctor.qualification %}<br><span style="font-size:10px;color:var(--txt3)">{{ c.doctor.qualification }}{% if c.doctor.specialization %} · {{ c.doctor.specialization }}{% endif %}</span>{% endif %}
+          {% if c.doctor.hospital %}<br><span style="font-size:10px;color:var(--txt3)">🏥 {{ c.doctor.hospital }}</span>{% endif %}
+          {% if c.doctor.mobile %}<br><span style="font-size:10px;color:var(--txt3)">📱 {{ c.doctor.mobile }}</span>{% endif %}
+        </td>
+        <td style="color:var(--teal);font-weight:600">₹{{ c.total_billing|floatformat:0 }}</td>
+        <td>{{ c.commission_pct }}%</td>
+        <td style="font-weight:700;color:var(--green);font-size:14px">₹{{ c.commission_amt|floatformat:0 }}</td>
+        <td style="font-size:11px;color:var(--txt3)">{{ c.bookings.count }}</td>
+        <td>
+          {% if c.status == 'paid' %}<span class="badge b-green">✓ Paid</span>
+          {% elif c.status == 'hold' %}<span class="badge b-yellow">On Hold</span>
+          {% else %}<span class="badge" style="background:var(--surface2);color:var(--txt2)">Pending</span>{% endif %}
+        </td>
+        <td style="font-size:11px;color:var(--txt3)">{{ c.paid_on|default:"—" }}</td>
+        <td>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            {% if c.status != 'paid' %}
+            <form method="post" action="{% url 'commission_pay' c.pk %}" onsubmit="return confirm('Mark ₹{{ c.commission_amt|floatformat:0 }} as Paid for Dr. {{ c.doctor.name }}?')">{% csrf_token %}
+              <button type="submit" class="btn btn-primary btn-xs">💰 Paid</button>
+            </form>
+            {% endif %}
+            <button class="btn btn-secondary btn-xs" onclick="openEditModal({{ c.pk }},'{{ c.commission_pct }}','{{ c.status }}','{{ c.remarks|default:'' }}')">✏️ Edit</button>
+            <a href="{% url 'commission_pdf' c.pk %}" target="_blank" class="btn btn-blue btn-xs">📄 Slip</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--txt3)">
+        No commissions yet. Bookings ke baad auto-generate hote hain, ya manually + Generate karein.
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<!-- Generate Modal -->
+<div class="mover" id="modal-gen">
+  <div class="mbox" style="width:420px">
+    <div class="mhd"><div class="mtitle">💊 Generate Commission</div><button class="mclose" onclick="closeModal('modal-gen')">×</button></div>
+    <form method="post" action="{% url 'commission_generate' %}">{% csrf_token %}
+      <div class="mbody">
+        <div class="fg"><label class="fl">Doctor <span class="req">*</span></label>
+          <select class="fc" name="doctor" required>
+            <option value="">— Select Doctor —</option>
+            {% for d in doctors %}<option value="{{ d.pk }}">Dr. {{ d.name }}{% if d.specialization %} ({{ d.specialization }}){% endif %}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Month <span class="req">*</span></label><input class="fc" type="month" name="month" required value="{% now 'Y-m' %}"></div>
+          <div class="fg"><label class="fl">Commission % <span class="req">*</span></label><input class="fc" type="number" name="commission_pct" min="0" max="100" step="0.1" required placeholder="e.g. 10"></div>
+        </div>
+        <div style="font-size:11px;color:var(--txt3);margin-top:4px">Note: Us mahine ke usi doctor ke saare bookings automatically include honge.</div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-gen')">Cancel</button><button type="submit" class="btn btn-primary">Generate</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="mover" id="modal-edit">
+  <div class="mbox" style="width:380px">
+    <div class="mhd"><div class="mtitle">✏️ Edit Commission</div><button class="mclose" onclick="closeModal('modal-edit')">×</button></div>
+    <form method="post" id="form-edit-comm" action="">{% csrf_token %}
+      <div class="mbody">
+        <div class="frow">
+          <div class="fg"><label class="fl">Commission %</label><input class="fc" type="number" name="commission_pct" id="edit-pct" min="0" max="100" step="0.1"></div>
+          <div class="fg"><label class="fl">Status</label>
+            <select class="fc" name="status" id="edit-status">
+              <option value="pending">Pending</option>
+              <option value="paid">Paid</option>
+              <option value="hold">On Hold</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Remarks</label><input class="fc" type="text" name="remarks" id="edit-remarks" placeholder="Optional note"></div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-edit')">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mover').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+function openEditModal(pk,pct,status,remarks){
+  document.getElementById('form-edit-comm').action='/commissions/'+pk+'/edit/';
+  document.getElementById('edit-pct').value=pct;
+  document.getElementById('edit-status').value=status;
+  document.getElementById('edit-remarks').value=remarks;
+  openModal('modal-edit');
+}
+</script>{% endblock %}

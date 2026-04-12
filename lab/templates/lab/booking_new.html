@@ -1,0 +1,331 @@
+{% extends 'lab/base.html' %}
+{% block title %}New Booking — Indian Path-Lab{% endblock %}
+{% block page_title %}New Patient Booking{% endblock %}
+{% block extra_head %}
+<style>
+.test-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;max-height:340px;overflow-y:auto;padding:2px;}
+.test-chk{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:all .15s;user-select:none;}
+.test-chk:hover{border-color:var(--teal);background:rgba(0,184,169,.04);}
+.test-chk.selected{border-color:var(--teal);background:rgba(0,184,169,.1);}
+.test-chk input[type=checkbox]{accent-color:var(--teal);width:14px;height:14px;cursor:pointer;}
+.test-chk-name{flex:1;font-size:12px;font-weight:500;color:var(--txt);}
+.test-chk-price{font-size:11px;font-weight:700;color:var(--teal);font-family:var(--mono);}
+.cat-bar{padding:5px 10px;background:rgba(0,184,169,.06);border:1px solid rgba(0,184,169,.15);border-radius:5px;font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;}
+.summary-row{display:flex;justify-content:space-between;font-size:12px;color:var(--txt2);padding:4px 0;border-bottom:1px solid var(--border);}
+.summary-row:last-child{border:none;font-size:14px;font-weight:700;color:var(--teal);}
+.selected-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:rgba(0,184,169,.1);border:1px solid rgba(0,184,169,.25);border-radius:12px;font-size:11px;color:var(--teal);margin:2px;}
+.selected-tag .rm{cursor:pointer;color:var(--red);font-size:13px;}
+@media(max-width:640px){
+  .test-grid{grid-template-columns:1fr;max-height:260px;}
+  .frow3{grid-template-columns:1fr 1fr;}
+}
+</style>
+{% endblock %}
+{% block content %}
+<form method="post" id="booking-form">{% csrf_token %}
+<div class="grid2" style="align-items:start">
+  <!-- Left: Patient + Billing -->
+  <div>
+    <div class="fpanel">
+      <div class="fpanel-hd"><div class="fpanel-title">👤 Patient Details</div></div>
+      <div class="fpanel-body">
+        <div class="frow mb4">
+          <div class="fg">
+            <label class="fl">Search / Select Patient <span class="req">*</span></label>
+            <select class="fc" name="patient_id" id="pt-sel" onchange="loadPatient(this.value)" required>
+              <option value="">— Select Patient —</option>
+              {% for pt in patients %}
+              <option value="{{ pt.pk }}" {% if selected_pt and selected_pt.pk == pt.pk %}selected{% endif %}>
+                {{ pt.full_name }} ({{ pt.patient_id }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="fg" style="display:flex;align-items:flex-end">
+            <a href="{% url 'patient_add' %}" onclick="return false" id="new-pt-btn" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center" onclick="openModal('modal-add-pt')">+ New Patient</a>
+          </div>
+        </div>
+        <!-- Patient info display -->
+        <div id="pt-info" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-bottom:12px">
+          <div class="frow3" style="gap:8px">
+            <div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;font-weight:700">ID</div><div id="pi-id" class="mono" style="margin-top:2px">—</div></div>
+            <div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;font-weight:700">Name</div><div id="pi-name" style="font-size:12px;font-weight:600;color:var(--txt);margin-top:2px">—</div></div>
+            <div><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;font-weight:700">Age / Gender</div><div id="pi-age" style="font-size:12px;color:var(--txt2);margin-top:2px">—</div></div>
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fg">
+            <label class="fl">Referring Doctor</label>
+            <select class="fc" name="ref_doctor" id="ref-doc-sel" onchange="onDoctorChange(this.value)">
+              <option value="">— Self Referred —</option>
+              {% for doc in doctors %}<option value="{{ doc.pk }}">{{ doc.name }}</option>{% endfor %}
+            </select>
+            <div id="doc-id-badge" style="display:none;margin-top:5px;padding:5px 10px;background:rgba(0,184,169,.1);border:1px solid rgba(0,184,169,.3);border-radius:6px;font-size:11px;color:var(--teal);font-weight:700;font-family:var(--mono);">
+              🔑 Doctor Code: <span id="doc-id-val"></span>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="fl">Sample Date</label>
+            <input class="fc" type="date" name="sample_date" value="{{ today }}">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="fpanel">
+      <div class="fpanel-hd"><div class="fpanel-title">💰 Billing</div></div>
+      <div class="fpanel-body">
+        <!-- Selected tests summary -->
+        <div class="fg">
+          <label class="fl">Selected Tests</label>
+          <div id="sel-tags" style="min-height:38px;padding:6px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-size:11px;color:var(--txt3)" id="no-sel-msg">No tests selected yet</span>
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Discount %</label><input class="fc" type="number" name="discount_pct" id="disc-inp" value="0" min="0" max="100" oninput="calcBill()"></div>
+          <div class="fg"><label class="fl">Referral %</label><input class="fc" type="number" name="referral_pct" id="ref-inp" value="0" min="0" max="100" oninput="calcBill()"></div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-bottom:12px">
+          <div class="summary-row"><span>Subtotal</span><span id="s-sub">₹0</span></div>
+          <div class="summary-row"><span style="color:var(--green)">Discount</span><span id="s-disc" style="color:var(--green)">−₹0</span></div>
+          <div class="summary-row"><span>TOTAL</span><span id="s-total">₹0</span></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Amount Paid</label><input class="fc" type="number" name="paid" id="paid-inp" value="0" min="0" oninput="calcBill()"></div>
+          <div class="fg"><label class="fl">Payment Mode</label>
+            <select class="fc" name="payment_mode">
+              <option>Cash</option><option>UPI/GPay</option><option>Card</option><option>Cheque</option><option>Credit</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--txt2)">
+          <span>Due Amount</span><span id="s-due" style="font-weight:700;color:var(--red)">₹0</span>
+        </div>
+      </div>
+      <div class="fpanel-foot">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('booking-form').reset();clearForm()">Reset</button>
+        <button type="submit" class="btn btn-primary">✓ Create Booking</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Test Selection -->
+  <div>
+    <div class="fpanel" style="position:sticky;top:18px">
+      <div class="fpanel-hd">
+        <div class="fpanel-title">🧪 Select Tests</div>
+        <div class="sbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="test-search" placeholder="Search test..." oninput="filterTests(this.value)"></div>
+      </div>
+      {% if profiles %}
+      <div style="padding:8px 10px;border-bottom:1px solid var(--border);background:rgba(0,184,169,.03)">
+        <div style="font-size:10px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Quick Select — Test Profile</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px" id="profile-btn-row">
+          {% for p in profiles %}
+          <button type="button" class="profile-btn" data-pk="{{ p.pk }}" data-name="{{ p.name|escapejs }}"
+            style="padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer;transition:all .15s">
+            🧬 {{ p.name }}{% if p.short_code %} ({{ p.short_code }}){% endif %} &nbsp;<span style="color:var(--teal)">&#8377;{{ p.price }}</span>
+          </button>
+          {% endfor %}
+        </div>
+        <div id="profile-loaded-msg" style="display:none;margin-top:5px;font-size:11px;color:var(--green);font-weight:600"></div>
+      </div>
+      {% endif %}
+      <div class="fpanel-body" style="padding:10px">
+        {% regroup tests by category as cat_tests %}
+        {% for cat in cat_tests %}
+        <div class="cat-bar" data-cat="{{ cat.grouper }}">
+          <span>{{ cat.grouper }}</span>
+          <button type="button" class="btn btn-secondary btn-xs" onclick="selectCat('{{ cat.grouper }}')">Select All</button>
+        </div>
+        <div class="test-grid mb3" id="cat-{{ cat.grouper|slugify }}">
+          {% for t in cat.list %}
+          <label class="test-chk" data-name="{{ t.name|lower }}" data-price="{{ t.price }}" data-id="{{ t.pk }}">
+            <input type="checkbox" name="test_ids" value="{{ t.pk }}" onchange="toggleTest(this)" data-name="{{ t.name }}" data-price="{{ t.price }}">
+            <span class="test-chk-name">{{ t.name }}</span>
+            <span class="test-chk-price">₹{{ t.price }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+</form>
+
+<!-- Add Patient Quick Modal -->
+<div class="mover" id="modal-add-pt">
+  <div class="mbox">
+    <div class="mhd"><div class="mtitle">Quick — Register New Patient</div><button class="mclose" onclick="closeModal('modal-add-pt')">×</button></div>
+    <form method="post" action="{% url 'patient_add' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mbody">
+        <div class="frow">
+          <div class="fg"><label class="fl">Honorific</label><select class="fc" name="honorific"><option value="Mr.">Mr.</option><option value="Mrs.">Mrs.</option><option value="Ms.">Ms.</option><option value="Miss">Miss</option><option value="Dr.">Dr.</option><option value="Prof.">Prof.</option><option value="Master">Master</option><option value="Baby">Baby</option><option value="M/s">M/s</option></select></div>
+          <div class="fg"><label class="fl">Gender</label><select class="fc" name="gender"><option>Male</option><option>Female</option><option>Child (M)</option><option>Child (F)</option><option>Other</option></select></div>
+        </div>
+        <div class="frow"><div class="fg"><label class="fl">First Name <span class="req">*</span></label><input class="fc" name="first_name" required></div><div class="fg"><label class="fl">Last Name</label><input class="fc" name="last_name"></div></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Age <span class="req">*</span></label><div style="display:flex;gap:6px"><input class="fc" type="number" name="age" min="0" required style="flex:1"><select class="fc" name="age_unit" style="width:80px;flex-shrink:0"><option value="Years">Yrs</option><option value="Months">Mon</option><option value="Days">Days</option></select></div></div>
+          <div class="fg"><label class="fl">Mobile <span style="font-size:10px;font-weight:400;color:var(--txt3)">(optional)</span></label><input class="fc" name="mobile" placeholder=""></div>
+        </div>
+        <div class="frow"><div class="fg"><label class="fl">Blood Group</label><select class="fc" name="blood_group"><option value="">Unknown</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div><div class="fg"></div></div>
+        <div class="frow"><div class="fg"><label class="fl">Referring Doctor</label><select class="fc" name="ref_doctor"><option value="">Self</option>{% for d in doctors %}<option value="{{ d.pk }}">{{ d.name }}</option>{% endfor %}</select></div><div class="fg"><label class="fl">Priority</label><select class="fc" name="priority"><option>Normal</option><option>Urgent</option><option>Emergency</option></select></div></div>
+        <div class="fg"><label class="fl">Address</label><input class="fc" name="address"></div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-pt')">Cancel</button><button type="submit" class="btn btn-primary">Register & Continue</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selTests = {}; // {id: {name, price}}
+
+document.getElementById('new-pt-btn').onclick = function(e){ e.preventDefault(); openModal('modal-add-pt'); };
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.mover').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
+function loadPatient(pk){
+  if(!pk){ document.getElementById('pt-info').style.display='none'; return; }
+  fetch('/api/patient/'+pk+'/')
+    .then(r=>r.json()).then(d=>{
+      document.getElementById('pi-id').textContent = d.patient_id;
+      document.getElementById('pi-name').textContent = d.honorific + '  ' + d.name;
+      document.getElementById('pi-age').textContent = d.age + ' ' + (d.age_unit||'Yrs') + ' / ' + d.gender;
+      document.getElementById('pt-info').style.display = 'block';
+      if(d.ref_doctor_id) document.getElementById('ref-doc-sel').value = d.ref_doctor_id;
+    });
+}
+{% if selected_pt %}
+window.addEventListener('load', () => loadPatient('{{ selected_pt.pk }}'));
+{% endif %}
+
+function toggleTest(chk){
+  const id = chk.value;
+  const lbl = chk.closest('.test-chk');
+  if(chk.checked){
+    selTests[id] = {name: chk.dataset.name, price: parseFloat(chk.dataset.price)};
+    lbl.classList.add('selected');
+  } else {
+    delete selTests[id];
+    lbl.classList.remove('selected');
+  }
+  renderTags(); calcBill();
+}
+
+function selectCat(cat){
+  const grid = document.getElementById('cat-'+cat.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''));
+  if(!grid) return;
+  grid.querySelectorAll('input[type=checkbox]').forEach(chk => {
+    if(!chk.checked){ chk.checked=true; toggleTest(chk); }
+  });
+}
+
+function renderTags(){
+  const wrap = document.getElementById('sel-tags');
+  const noMsg = document.getElementById('no-sel-msg');
+  if(!Object.keys(selTests).length){
+    wrap.innerHTML = '<span style="font-size:11px;color:var(--txt3)" id="no-sel-msg">No tests selected yet</span>';
+    return;
+  }
+  wrap.innerHTML = Object.entries(selTests).map(([id,t]) =>
+    `<span class="selected-tag">${t.name} <span style="opacity:.6;font-size:9px">₹${t.price}</span> <span class="rm" onclick="removeTest('${id}')">×</span></span>`
+  ).join('');
+}
+
+function removeTest(id){
+  const chk = document.querySelector(`input[value="${id}"]`);
+  if(chk){ chk.checked=false; chk.closest('.test-chk').classList.remove('selected'); }
+  delete selTests[id]; renderTags(); calcBill();
+}
+
+function calcBill(){
+  const sub = Object.values(selTests).reduce((s,t) => s+t.price, 0);
+  const disc = parseFloat(document.getElementById('disc-inp').value)||0;
+  const discAmt = Math.round(sub * disc/100);
+  const total = sub - discAmt;
+  const paid = parseFloat(document.getElementById('paid-inp').value)||0;
+  const due = total - paid;
+  document.getElementById('s-sub').textContent = '₹'+sub;
+  document.getElementById('s-disc').textContent = '−₹'+discAmt;
+  document.getElementById('s-total').textContent = '₹'+total;
+  document.getElementById('s-due').textContent = '₹'+Math.max(0,due);
+}
+
+function filterTests(q){
+  document.querySelectorAll('.test-chk').forEach(el => {
+    el.style.display = el.dataset.name.includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function clearForm(){
+  selTests = {}; renderTags(); calcBill();
+  document.getElementById('pt-info').style.display='none';
+  document.querySelectorAll('.test-chk').forEach(el => el.classList.remove('selected'));
+}
+
+// ── Profile loader ────────────────────────────────────────────────────────
+document.querySelectorAll('.profile-btn').forEach(btn => {
+  btn.addEventListener('click', function(){
+    const pk   = this.dataset.pk;
+    const name = this.dataset.name;
+    // Highlight active
+    document.querySelectorAll('.profile-btn').forEach(b => b.style.borderColor = 'var(--border)');
+    this.style.borderColor = 'var(--teal)';
+    this.style.color = 'var(--teal)';
+
+    fetch('/api/profile/' + pk + '/tests/')
+      .then(r => r.json())
+      .then(data => {
+        // Uncheck all first
+        document.querySelectorAll('.test-chk input').forEach(cb => {
+          if(cb.checked){ cb.checked = false; cb.closest('.test-chk').classList.remove('selected'); }
+        });
+        selTests = {};
+
+        // Check tests from profile
+        let loaded = 0;
+        data.tests.forEach(t => {
+          const cb = document.querySelector('.test-chk input[value="'+t.id+'"]');
+          if(cb){
+            cb.checked = true;
+            cb.closest('.test-chk').classList.add('selected');
+            selTests[t.id] = {name: t.name, price: parseFloat(t.price)};
+            loaded++;
+          }
+        });
+        renderTags();
+        calcBill();
+
+        const msg = document.getElementById('profile-loaded-msg');
+        if(msg){
+          msg.style.display = 'block';
+          msg.textContent = '✓ ' + name + ' loaded — ' + loaded + ' test(s) selected';
+          setTimeout(() => { msg.style.display = 'none'; }, 3000);
+        }
+      })
+      .catch(e => console.error('Profile load error:', e));
+  });
+});
+// ── Doctor Code Badge ──
+const DOCTORS_DATA = {{ doctors_json|safe }};
+function onDoctorChange(pk) {
+  const badge = document.getElementById('doc-id-badge');
+  const val   = document.getElementById('doc-id-val');
+  if (!pk) { badge.style.display = 'none'; return; }
+  const doc = DOCTORS_DATA.find(d => String(d.pk) === String(pk));
+  if (doc) {
+    val.textContent = doc.doc_id;
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+// Show badge on page load if doctor already selected (e.g. patient's referring doctor)
+(function(){ const sel = document.getElementById('ref-doc-sel'); if(sel && sel.value) onDoctorChange(sel.value); })();
+</script>
+{% endblock %}

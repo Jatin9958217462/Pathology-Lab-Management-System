@@ -1,0 +1,121 @@
+{% extends 'lab/base.html' %}
+{% block title %}Insurance Companies — IPL{% endblock %}
+{% block page_title %}Insurance Companies{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'insurance_claims' %}" class="btn btn-secondary btn-sm">← Back to Claims</a>
+{% endblock %}
+{% block content %}
+
+<style>
+.ins-hero{background:linear-gradient(135deg,#1a56db 0%,#0891b2 100%);border-radius:12px;padding:20px 24px;margin-bottom:18px;display:flex;align-items:center;gap:16px;}
+.ins-hero-icon{font-size:36px;line-height:1;}
+.ins-hero-text .title{font-size:20px;font-weight:800;color:#fff;margin-bottom:2px;}
+.ins-hero-text .sub{font-size:12px;color:rgba(255,255,255,.8);}
+
+.add-form-card{background:var(--surface,#fff);border:1px solid var(--border,#e5e7eb);border-radius:12px;padding:20px 22px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.add-form-card .form-title{font-size:13px;font-weight:700;color:var(--txt,#111);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.add-form-card .form-title .fticon{background:#1a56db;color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;}
+
+.ins-form-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px;}
+.ins-fg{display:flex;flex-direction:column;gap:4px;}
+.ins-fg label{font-size:11px;font-weight:600;color:var(--txt2,#555);text-transform:uppercase;letter-spacing:.4px;}
+.ins-fg input{border:1px solid var(--border,#d1d5db);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--txt,#111);background:var(--surface2,#f9fafb);outline:none;transition:border-color .2s,box-shadow .2s;width:100%;}
+.ins-fg input:focus{border-color:#1a56db;background:#fff;box-shadow:0 0 0 3px rgba(26,86,219,.1);}
+
+.add-btn{background:linear-gradient(135deg,#1a56db,#2563eb);color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.3px;}
+.add-btn:hover{opacity:.9;}
+
+.co-table-card{background:var(--surface,#fff);border:1px solid var(--border,#e5e7eb);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.co-table-hd{padding:14px 18px;border-bottom:1px solid var(--border,#e5e7eb);display:flex;align-items:center;justify-content:space-between;}
+.co-table-hd .ht{font-size:13px;font-weight:700;color:var(--txt,#111);}
+.count-badge{background:#eff6ff;color:#1a56db;border:1px solid rgba(26,86,219,.15);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;}
+
+.co-table{width:100%;border-collapse:collapse;}
+.co-table thead th{padding:10px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--txt3,#888);background:var(--surface2,#f9fafb);border-bottom:1px solid var(--border,#e5e7eb);text-align:left;}
+.co-table tbody tr{border-bottom:1px solid #f3f4f6;transition:background .15s;}
+.co-table tbody tr:last-child{border-bottom:none;}
+.co-table tbody tr:hover{background:var(--surface2,#f9fafb);}
+.co-table td{padding:12px 16px;font-size:12px;color:var(--txt,#111);vertical-align:middle;}
+.co-name{font-weight:700;display:flex;align-items:center;gap:7px;}
+.tpa-badge{background:#f0fdfa;color:#0891b2;border:1px solid rgba(8,145,178,.2);border-radius:12px;padding:2px 9px;font-size:10px;font-weight:700;}
+.dash-val{color:#ccc;}
+
+.empty-state{text-align:center;padding:52px 20px;}
+.empty-state .emoji{font-size:40px;margin-bottom:12px;}
+.empty-state .msg{font-size:13px;font-weight:600;color:var(--txt2,#555);margin-bottom:4px;}
+.empty-state .sub{font-size:11px;color:var(--txt3,#aaa);}
+</style>
+
+<!-- Hero -->
+<div class="ins-hero">
+  <div class="ins-hero-icon">🏢</div>
+  <div class="ins-hero-text">
+    <div class="title">Insurance Companies & TPA</div>
+    <div class="sub">Manage TPA partners — Star Health, ICICI Lombard, Medi Assist and more</div>
+  </div>
+</div>
+
+<!-- Add form -->
+<div class="add-form-card">
+  <div class="form-title"><span class="fticon">+</span> Add Company / TPA</div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="ins-form-row">
+      <div class="ins-fg">
+        <label>Company Name <span style="color:#e53e3e">*</span></label>
+        <input type="text" name="name" placeholder="e.g. Star Health Insurance" required>
+      </div>
+      <div class="ins-fg">
+        <label>TPA Name</label>
+        <input type="text" name="tpa_name" placeholder="e.g. Medi Assist">
+      </div>
+      <div class="ins-fg">
+        <label>Contact</label>
+        <input type="text" name="contact" placeholder="Phone number">
+      </div>
+      <div class="ins-fg">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="company@email.com">
+      </div>
+    </div>
+    <button type="submit" class="add-btn">➕ Add Company</button>
+  </form>
+</div>
+
+<!-- Table -->
+<div class="co-table-card">
+  <div class="co-table-hd">
+    <span class="ht">📋 Registered Companies</span>
+    <span class="count-badge">{{ companies|length }} Total</span>
+  </div>
+  <table class="co-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>TPA</th>
+        <th>Contact</th>
+        <th>Email</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for co in companies %}
+      <tr>
+        <td><span class="co-name">🏢 {{ co.name }}</span></td>
+        <td>{% if co.tpa_name %}<span class="tpa-badge">{{ co.tpa_name }}</span>{% else %}<span class="dash-val">—</span>{% endif %}</td>
+        <td>{{ co.contact|default:"—" }}</td>
+        <td>{{ co.email|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">
+        <div class="empty-state">
+          <div class="emoji">🏢</div>
+          <div class="msg">No insurance companies added yet.</div>
+          <div class="sub">Use the form above to add your first TPA or insurance company.</div>
+        </div>
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

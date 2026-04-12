@@ -1,0 +1,103 @@
+{% extends 'lab/base.html' %}
+{% block title %}BranchNet — IPL{% endblock %}
+{% block page_title %}BranchNet{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="wb-title">🏢 BranchNet</div>
+      <div class="wb-sub">Multi-location lab management — control all branches from one dashboard</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--teal)">{{ branches|length }}</div>
+      <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px">Branches</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:380px 1fr;gap:14px">
+  <!-- Add form -->
+  <div>
+    <div class="fpanel">
+      <div class="fpanel-hd"><div class="fpanel-title">➕ Add New Branch</div></div>
+      <div class="fpanel-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="fg">
+            <label class="fl">Branch Name <span class="req">*</span></label>
+            <input type="text" name="name" class="fc" placeholder="e.g. IPL Rohini Branch" required>
+          </div>
+          <div class="fg">
+            <label class="fl">Phone</label>
+            <input type="text" name="phone" class="fc" placeholder="9999999999">
+          </div>
+          <div class="fg">
+            <label class="fl">Email</label>
+            <input type="email" name="email" class="fc" placeholder="rohini@indianpathlab.com">
+          </div>
+          <div class="fg">
+            <label class="fl">Address</label>
+            <textarea name="address" class="fc" rows="2" placeholder="Branch address..."></textarea>
+          </div>
+          <button class="btn btn-primary btn-full">+ Create Branch</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Info card -->
+    <div class="card" style="margin-top:12px;border-color:rgba(0,184,169,.2);background:var(--teal-l)">
+      <div style="padding:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:8px">📋 BranchNet Features</div>
+        <ul style="font-size:11px;color:var(--txt2);line-height:2;padding-left:14px">
+          <li>Each branch has its <strong style="color:var(--txt)">own data</strong> — patients, bookings, reports</li>
+          <li><strong style="color:var(--txt)">Staff</strong> can only see their own branch data</li>
+          <li><strong style="color:var(--txt)">Admin</strong> has full access to all branches</li>
+          <li>Separate <strong style="color:var(--txt)">letterhead</strong> per branch — coming soon</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Branches list -->
+  <div class="card">
+    <div class="card-hd"><div class="card-title">All Branches</div></div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Branch ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for b in branches %}
+          <tr>
+            <td><span class="mono" style="color:var(--teal)">{{ b.branch_id }}</span></td>
+            <td>
+              <strong>{{ b.name }}</strong>
+              {% if b.address %}<br><span style="font-size:10px;color:var(--txt3)">{{ b.address|truncatechars:40 }}</span>{% endif %}
+            </td>
+            <td>{{ b.phone|default:"—" }}</td>
+            <td style="font-size:11px">{{ b.email|default:"—" }}</td>
+            <td>
+              {% if b.is_active %}
+              <span class="badge b-green">● Active</span>
+              {% else %}
+              <span class="badge" style="background:var(--red-l);color:var(--red)">● Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="post" action="{% url 'branch_delete' b.pk %}" style="display:inline" onsubmit="return confirm('Delete branch {{ b.name }}?')">
+                {% csrf_token %}
+                <button class="btn btn-danger btn-xs">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" style="text-align:center;padding:48px 20px">
+            <div style="font-size:32px;margin-bottom:10px">🏢</div>
+            <div style="color:var(--txt2);font-size:13px;font-weight:600">No branches configured yet</div>
+            <div style="color:var(--txt3);font-size:11px;margin-top:4px">Fill the form on the left to add your first branch</div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

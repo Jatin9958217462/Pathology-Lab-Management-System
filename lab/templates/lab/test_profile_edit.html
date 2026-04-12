@@ -1,0 +1,119 @@
+{% extends 'lab/base.html' %}
+{% block title %}Edit Profile — {{ profile.name }}{% endblock %}
+{% block page_title %}Edit Profile{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'test_profiles' %}" class="btn btn-secondary btn-sm">← Back to Profiles</a>
+{% endblock %}
+{% block extra_head %}
+<style>
+#test-checkboxes{max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:6px;}
+.test-cb-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:4px;cursor:pointer;transition:background .1s;}
+.test-cb-item:hover{background:var(--surface);}
+.test-cb-item label{font-size:12px;color:var(--txt);cursor:pointer;flex:1;}
+.cat-header{padding:4px 8px;font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.8px;background:var(--bg3);border-radius:4px;margin:4px 0 2px;}
+</style>
+{% endblock %}
+{% block content %}
+<div style="max-width:700px">
+<div class="fpanel">
+  <div class="fpanel-hd">
+    <div class="fpanel-title">✏️ Edit Profile — {{ profile.name }}</div>
+    <div style="font-size:10px;color:var(--txt3)">{{ profile.profile_code }}</div>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="fpanel-body">
+      <div class="frow">
+        <div class="fg">
+          <label class="fl">Profile Name <span class="req">*</span></label>
+          <input class="fc" name="name" value="{{ profile.name }}" required>
+        </div>
+        <div class="fg">
+          <label class="fl">Short Code</label>
+          <input class="fc" name="short_code" value="{{ profile.short_code }}" style="text-transform:uppercase">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label class="fl">Profile Price (₹)</label>
+          <input class="fc" type="number" name="price" id="profile-price" value="{{ profile.price }}" min="0" oninput="updateDiscount()">
+        </div>
+        <div class="fg">
+          <label class="fl">Sort Order</label>
+          <input class="fc" type="number" name="sort_order" value="{{ profile.sort_order }}">
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Description</label>
+        <input class="fc" name="description" value="{{ profile.description }}">
+      </div>
+      <div class="fg" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" name="is_active" id="is_active" {% if profile.is_active %}checked{% endif %}>
+        <label for="is_active" style="font-size:12px;color:var(--txt);cursor:pointer">Active (visible in booking form)</label>
+      </div>
+      <div class="fg" style="margin-top:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label class="fl" style="margin-bottom:0">Tests in this Profile</label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="test-search" placeholder="Search..." style="padding:4px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--txt);font-size:11px;width:130px;outline:none" oninput="filterTests(this.value)">
+            <span id="selected-count" style="font-size:11px;color:var(--teal);font-weight:600">0 selected</span>
+          </div>
+        </div>
+        <div id="test-checkboxes">
+          {% regroup all_tests by category as cat_list %}
+          {% for cat in cat_list %}
+          <div class="cat-header">{{ cat.grouper }}</div>
+          {% for t in cat.list %}
+          <div class="test-cb-item" data-name="{{ t.name|lower }}">
+            <input type="checkbox" name="tests" value="{{ t.pk }}" id="tst{{ t.pk }}"
+              {% if t in profile.tests.all %}checked{% endif %}
+              onchange="updateSelectedCount();updateMRP()">
+            <label for="tst{{ t.pk }}">{{ t.name }}</label>
+            <span style="font-size:11px;color:var(--teal);font-weight:600">₹{{ t.price }}</span>
+          </div>
+          {% endfor %}
+          {% endfor %}
+        </div>
+        <div style="margin-top:6px;padding:8px;background:var(--bg3);border-radius:6px;display:flex;gap:16px;font-size:11px">
+          <span style="color:var(--txt2)">Sum MRP: <strong id="mrp-sum" style="color:var(--txt)">₹0</strong></span>
+          <span style="color:var(--txt2)">Profile Price: <strong id="pp-display" style="color:var(--teal)">₹{{ profile.price }}</strong></span>
+          <span style="color:var(--txt2)">Savings: <strong id="discount-display" style="color:var(--green)">—</strong></span>
+        </div>
+      </div>
+    </div>
+    <div class="fpanel-foot">
+      <a href="{% url 'test_profiles' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const testPrices = { {% for t in all_tests %}'{{ t.pk }}': {{ t.price }},{% endfor %} };
+function updateSelectedCount(){
+  const n = document.querySelectorAll('#test-checkboxes input:checked').length;
+  document.getElementById('selected-count').textContent = n + ' selected';
+}
+function updateMRP(){
+  let mrp = 0;
+  document.querySelectorAll('#test-checkboxes input:checked').forEach(cb => { mrp += (testPrices[cb.value]||0); });
+  const pp = parseFloat(document.getElementById('profile-price').value||0);
+  document.getElementById('mrp-sum').textContent = '₹' + mrp;
+  document.getElementById('pp-display').textContent = '₹' + pp;
+  const saving = mrp - pp;
+  const pct = mrp > 0 ? (saving/mrp*100).toFixed(1) : 0;
+  document.getElementById('discount-display').textContent = saving > 0 ? '₹' + saving.toFixed(0) + ' (' + pct + '%)' : '—';
+}
+function filterTests(q){
+  q = q.toLowerCase();
+  document.querySelectorAll('.test-cb-item').forEach(el => {
+    el.style.display = (!q || el.dataset.name.includes(q)) ? '' : 'none';
+  });
+}
+// Init on load
+document.addEventListener('DOMContentLoaded', () => { updateSelectedCount(); updateMRP(); });
+document.getElementById('profile-price')?.addEventListener('input', updateMRP);
+</script>
+{% endblock %}

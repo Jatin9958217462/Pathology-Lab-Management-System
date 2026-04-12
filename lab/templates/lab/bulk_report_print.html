@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reports — {{ lab.lab_name }}</title>
+<style>
+@page{size:A4;margin:{{ lab.print_bulk_margin_top }}px {{ lab.print_bulk_margin_right }}px {{ lab.print_bulk_margin_bottom }}px {{ lab.print_bulk_margin_left }}px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,Helvetica,sans-serif;font-size:12pt;color:#111;background:#fff;}
+.pbtn{position:fixed;top:12px;right:12px;background:#1a56db;color:#fff;border:none;padding:9px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700;z-index:2000;}
+
+/*
+ * KEY APPROACH:
+ * - letterhead_image goes inside EACH .report-page at the TOP as a normal block image
+ * - Footer image is NOT shown in print — PDF only
+ * - position:fixed is NOT used for images — it caused content overlap
+ * - page-break-after:always ensures each report is on its own page
+ * - padding-bottom on .report-page reserves space for the footer area
+ */
+
+.report-page{
+  width:210mm;
+  position:relative;
+  background:#fff;
+  page-break-after:always;
+  /* padding-bottom makes room for absolute-positioned sig+footer */
+  padding-bottom:170px;
+}
+.report-page:last-child{page-break-after:avoid;}
+
+/* Letterhead fallback (no image) */
+.lh-hdr{display:flex;align-items:flex-start;padding:8px 14px 5px;gap:10px;}
+.lh-l{flex-shrink:0;min-width:155px;}
+.lh-lrow{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+.lh-ci{width:44px;height:44px;background:linear-gradient(135deg,#00a8a0,#006fba);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.lh-ci span{font-size:13px;font-weight:900;color:#fff;}
+.lh-nm{font-size:20px;font-weight:900;color:#006fba;font-family:'Arial Black',Arial;}
+.lh-iso{background:#1a56db;color:#fff;font-size:7px;font-weight:700;padding:1px 5px;border-radius:2px;margin-top:2px;display:inline-block;}
+.lh-pmegp{font-size:8px;color:#333;font-weight:700;text-transform:uppercase;margin-top:1px;}
+.lh-email{font-size:8px;color:#1a56db;font-weight:700;margin-top:1px;}
+.lh-addr{flex:1;text-align:right;font-size:8.5px;color:#222;line-height:1.8;padding-top:4px;}
+
+/* Body content */
+.bwrap{padding:5px 14px;}
+.pt-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #aaa;padding-bottom:5px;margin-bottom:5px;}
+.pt-hdr{font-size:9pt;font-weight:700;text-decoration:underline;margin-bottom:4px;}
+.pt-row{display:flex;gap:4px;font-size:11pt;margin-bottom:3px;white-space:nowrap;overflow:hidden;}
+.pt-row .l{color:#444;min-width:78px;flex-shrink:0;font-size:10.5pt;}
+.pt-row .v{font-weight:700;color:#111;white-space:nowrap;font-size:11pt;}
+.pt-mid{padding-left:10px;display:flex;flex-direction:column;gap:2px;padding-top:2px;}
+.mr{display:flex;gap:4px;font-size:10.5pt;align-items:baseline;white-space:nowrap;}
+.mr .ml{color:#444;min-width:118px;flex-shrink:0;font-weight:600;}
+.dept-title{text-align:center;font-size:14pt;font-weight:900;text-transform:uppercase;letter-spacing:1px;text-decoration:underline;margin:6px 0 4px;}
+.rtbl{width:100%;border-collapse:collapse;font-size:12pt;}
+.rtbl .ch th{padding:3px 6px;border-top:1px solid #888;border-bottom:1px solid #888;font-weight:700;color:#333;font-size:10pt;text-transform:uppercase;background:#ebebeb;}
+.rtbl .sh td{font-size:14pt;font-weight:900;padding:5px 6px 2px;text-transform:uppercase;text-decoration:underline;}
+.rtbl .dr td{padding:2px 6px;vertical-align:middle;}
+.rtbl .dr td.pn{padding-left:12px;}
+.fh{color:#cc0000;font-weight:900!important;}
+.fl2{color:#aa6600;font-weight:900!important;}
+.fn{color:#005500;}
+.tnote{font-size:10pt;color:#333;margin:5px 0;line-height:1.5;font-style:italic;}
+.eor{text-align:center;font-size:12pt;font-weight:700;text-transform:uppercase;margin:7px 0 3px;border-top:1px solid #bbb;border-bottom:1px solid #bbb;padding:3px 0;}
+.adv{font-size:12pt;font-weight:700;margin-bottom:8px;}
+
+/* Bottom area: signatures + footer image — absolute inside each page */
+
+
+
+
+}px;width:auto;max-width:{{ lab.signer_image_height|add:55 }}px;display:block;margin:0 auto 2px;}
+
+
+
+
+
+
+.wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:0;pointer-events:none;opacity:.04;}
+@media print{
+  .pbtn{display:none!important;}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+}
+
+/* Letterhead as full-page background */
+.lh-bg-img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:top;z-index:0;pointer-events:none;opacity:1;}
+
+.page-content{position:relative;z-index:1;}
+.page-bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;z-index:100;}
+.sig-area{display:flex;align-items:flex-end;padding:3px 10px 2px;gap:0;}
+.qr-col{flex-shrink:0;margin-right:10px;text-align:center;}
+.qr-col .fqr{width:40px;height:40px;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;}
+.chklbl{font-size:7.5pt;color:#444;}
+.signers{display:flex;justify-content:space-around;flex:1;}
+.sb{text-align:center;flex:1;}
+.sl2{width:60px;border-top:none;margin:0 auto 2px;}
+.si{height:{{ lab.signer_image_height }}px;width:auto;display:block;margin:0 auto 2px;}
+.sn{font-size:8pt;font-weight:700;}
+.sq{font-size:7pt;color:#444;line-height:1.2;}
+.footer-img-block{width:100%;display:block;}
+.notebar{font-size:8pt;color:#444;line-height:1.5;padding:3px 14px;border-top:1px solid #ddd;}
+.tbar{background:#1a56db;color:#fff;font-size:8pt;font-weight:700;padding:3px 14px;text-align:center;}
+.fbar{background:#00a8a0;color:#fff;font-size:8pt;font-weight:700;padding:3px 14px;text-align:center;}
+</style>
+</head>
+<body>
+<button class="pbtn no-print" onclick="window.print()">🖨 Print All</button>
+
+{% for item in reports_with_qr %}{% with report=item.report qr_b64=item.qr_b64 results=item.report.results.all %}
+<div class="report-page">
+  <div class="wm"></div>
+
+  <!-- ── HEADER: only shown when letterhead=True ── -->
+  {% if letterhead %}
+    {% if lab.letterhead_image %}
+    <img class="lh-bg-img" src="{{ lab.letterhead_image.url }}" alt="Letterhead Background">
+    {% else %}
+    <div class="lh-hdr">
+      <div class="lh-l">
+        <div class="lh-lrow">
+          {% if lab.logo_image %}<img style="height:44px;width:auto" src="{{ lab.logo_image.url }}" alt="Logo">
+          {% endif %}
+          <div><div class="lh-nm">{{ lab.lab_name }}</div></div>
+        </div>
+        <div class="lh-iso">{{ lab.tagline }}</div>
+        <div class="lh-pmegp">{{ lab.unit_text }}</div>
+        <div class="lh-email"><span style="color:#333">E-mail :</span> {{ lab.email }}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;margin:0 10px">
+        <div style="font-size:7px;color:#555;font-weight:700;text-align:center;line-height:1.1;margin-bottom:3px">Scan to<br>Verify</div>
+        {% if qr_b64 %}<img src="data:image/png;base64,{{ qr_b64 }}" style="width:48px;height:48px;" alt="QR">{% else %}<div style="width:46px;height:46px;border:1px solid #ccc;display:flex;align-items:center;justify-content:center;font-size:6px;color:#aaa">QR</div>{% endif %}
+      </div>
+      <div class="lh-addr">{{ lab.address|linebreaksbr }}<br><strong>Mobile : {{ lab.phone }}</strong></div>
+    </div>
+    {% endif %}
+  {% endif %}
+
+  <!-- ── REPORT CONTENT ── -->
+  <div class="page-content"><div class="content-wrap"><div class="bwrap">
+    <div class="pt-grid">
+      <div>
+        <div class="pt-hdr">Patient Report</div>
+        <div class="pt-row"><span class="l">Name</span><span>:</span><span class="v">&nbsp;{{ report.booking.patient.salutation }}&nbsp;{{ report.booking.patient.full_name|upper }}</span></div>
+        <div class="pt-row"><span class="l">Age / Sex</span><span>:</span><span class="v">&nbsp;{{ report.booking.patient.age }} {{ report.booking.patient.age_unit }} / {{ report.booking.patient.gender|upper }}</span></div>
+        <div class="pt-row"><span class="l">Referred By</span><span>:</span><span class="v">&nbsp;{{ report.booking.ref_doctor.name|default:"SELF"|upper }}</span></div>
+        <div class="pt-row"><span class="l">ID No.</span><span>:</span><span class="v">&nbsp;{% if report.custom_report_no %}{{ report.custom_report_no }}{% else %}{{ report.booking.patient.custom_display_id|default:report.booking.patient.patient_id }}{% endif %} / {{ report.report_id|slice:"4:" }}</span></div>
+      </div>
+      <div class="pt-mid">
+        <div style="height:14px"></div>
+        <div class="mr"><span class="ml">Sample Drawn</span><span>:</span><span style="font-weight:700">&nbsp;{% if report.sample_drawn_date %}{{ report.sample_drawn_date|date:"l, F j, Y" }}{% else %}{{ report.booking.sample_date|date:"l, F j, Y" }}{% endif %}</span></div>
+        <div class="mr"><span class="ml">Sample Received</span><span>:</span><span>&nbsp;{{ report.booking.sample_date|date:"n/j/Y" }} {{ report.booking.created_at|date:"g:i A" }}</span></div>
+        <div class="mr"><span class="ml">Result Reported</span><span>:</span><span>&nbsp;{{ report.report_date|date:"l, F j, Y" }}</span></div>
+        <div class="mr"><span class="ml">Sample Collected by</span><span>:</span><span></span></div>
+        <div class="mr" style="margin-top:4px"><span style="font-weight:700;color:#111">Final Report</span></div>
+      </div>
+    </div>
+    <div class="dept-title">{{ report.test.category }}</div>
+    <table class="rtbl">
+      <tr class="ch">
+        <th style="width:40%;text-align:left">TEST NAME</th>
+        <th style="width:13%;text-align:left">VALUE</th>
+        <th style="width:13%;text-align:left">UNIT</th>
+        <th style="text-align:center;border-left:1px solid #ccc">BIOLOGICAL REFERENCES</th>
+      </tr>
+      <tr class="sh"><td colspan="4">{{ report.test.display_name }}</td></tr>
+      {% for res in results %}
+      <tr class="dr">
+        <td class="pn {% if res.flag == 'high' %}fh{% elif res.flag == 'low' %}fl2{% endif %}">{{ res.param_name }}</td>
+        <td class="{% if res.flag == 'high' %}fh{% elif res.flag == 'low' %}fl2{% elif res.flag == 'normal' %}fn{% endif %}">{{ res.value|default:"" }}</td>
+        <td style="color:#444">{{ res.unit|default:"" }}</td>
+        {% if res.lower_limit or res.lower_limit == 0 %}
+        <td style="text-align:center;color:#333">{{ res.lower_limit }} - {{ res.upper_limit }}</td>
+        {% else %}
+        <td style="text-align:center;color:#555">{{ res.normal_range|default:"—" }}</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+      <tr><td colspan="4" style="border-top:1px solid #bbb;padding:0;height:1px"></td></tr>
+    </table>
+    {% if report.test.note %}<div class="tnote">{{ report.test.note.note_text }}</div>
+    {% elif report.test.category == 'Haematology' %}<div class="tnote">The cell morphology is well preserved for 24 hrs. However after 24-48 hrs a progressive increase in MCV and HCT is observed.</div>{% endif %}
+    <div class="eor">END OF REPORT</div>
+    <div class="adv">ADVISED : {% if report.remarks %}{{ report.remarks|upper }}{% else %}FURTHER FOLLOW UP AND CLINICAL CORRELATION.{% endif %}</div>
+  </div></div><!-- /content-wrap --></div><!-- /page-content -->
+
+  <!-- ── FOOTER: signatures + footer image ── -->
+  <div class="page-bottom">
+    <div class="sig-area">
+      <div class="qr-col">
+        <div class="fqr">{% if qr_b64 %}<img src="data:image/png;base64,{{ qr_b64 }}" style="width:38px;height:38px;" alt="QR">{% else %}QR{% endif %}</div>
+        <div class="chklbl">CHECKED BY</div>
+      </div>
+      <div class="signers">
+        <div class="sb">{% if lab.signature_saleem %}<img class="si" src="{{ lab.signature_saleem.url }}" alt="">{% else %}<div class="sl2"></div>{% endif %}<div class="sn">{{ lab.signer1_name }}</div><div class="sq">{{ lab.signer1_qual|linebreaksbr }}</div></div>
+        <div class="sb">{% if lab.signature_kumar %}<img class="si" src="{{ lab.signature_kumar.url }}" alt="">{% else %}<div class="sl2"></div>{% endif %}<div class="sn">{{ lab.signer2_name }}</div><div class="sq">{{ lab.signer2_qual|linebreaksbr }}</div></div>
+        <div class="sb">{% if lab.signature_maurya %}<img class="si" src="{{ lab.signature_maurya.url }}" alt="">{% else %}<div class="sl2"></div>{% endif %}<div class="sn">{{ lab.signer3_name }}</div><div class="sq">{{ lab.signer3_qual|linebreaksbr }}</div></div>
+        <div class="sb">{% if lab.signature_ansari %}<img class="si" src="{{ lab.signature_ansari.url }}" alt="">{% else %}<div class="sl2"></div>{% endif %}<div class="sn">{{ lab.signer4_name }}</div><div class="sq">{{ lab.signer4_qual|linebreaksbr }}</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endwith %}{% endfor %}
+</body>
+</html>

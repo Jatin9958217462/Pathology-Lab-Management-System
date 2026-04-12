@@ -1,0 +1,30 @@
+== PathLab — Shared Database Path Configuration ==
+
+Is file ka naam badlo: db_path.txt (example hata do)
+
+Pehli line = database file ka full path
+Doosri line = media folder ka full path (logos, signatures)
+
+---
+WINDOWS EXAMPLES:
+
+Pendrive (drive E:):
+E:\pathlab_data\db.sqlite3
+E:\pathlab_data\media
+
+Network Server:
+\\192.168.1.100\shared\pathlab\db.sqlite3
+\\192.168.1.100\shared\pathlab\media
+
+---
+LINUX EXAMPLES:
+
+/mnt/pendrive/pathlab/db.sqlite3
+/mnt/pendrive/pathlab/media
+
+---
+NOTE:
+- Agar yeh file nahi hai toh default project folder mein db.sqlite3 use hoga
+- start.bat mein PATHLAB_DB_PATH set karna zyada reliable hai
+- Ek hi db file ko multiple computers simultaneously use nahi kar sakte (SQLite limitation)
+  Iske liye MySQL/PostgreSQL use karein ya ek machine ko server banao aur baaki browser se kholen

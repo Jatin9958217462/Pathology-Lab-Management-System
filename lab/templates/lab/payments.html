@@ -1,0 +1,98 @@
+{% extends 'lab/base.html' %}
+{% block title %}PayTrack — IPL{% endblock %}
+{% block page_title %}PayTrack{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="wb-title">💳 PayTrack</div>
+      <div class="wb-sub">Razorpay online payment orders — UPI, Card, Net Banking all tracked in one place</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--display);font-size:28px;font-weight:700;color:var(--teal)">{{ orders|length }}</div>
+      <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px">Total Orders</div>
+    </div>
+  </div>
+</div>
+
+{% if not orders %}
+<div style="background:var(--blue-l);border:1px solid rgba(56,139,253,.25);border-radius:var(--r2);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--blue);flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <span style="font-size:12px;color:var(--blue)"><strong>Setup:</strong> razorpay.com → API Keys → Add Key ID &amp; Secret in <a href="{% url 'lab_settings' %}" style="color:var(--blue)">Lab Settings → PayTrack</a>. Use <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">rzp_test_</code> key for test mode.</span>
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+  <div class="stat">
+    <div class="stat-icon si-teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+    <div class="stat-val">{{ orders|length }}</div>
+    <div class="stat-lbl">Total Orders</div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon si-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="stat-val">0</div>
+    <div class="stat-lbl">Paid</div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon si-yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+    <div class="stat-val">0</div>
+    <div class="stat-lbl">Pending</div>
+  </div>
+  <div class="stat">
+    <div class="stat-icon si-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+    <div class="stat-val">₹0</div>
+    <div class="stat-lbl">Total Collected</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-hd">
+    <div><div class="card-title">Payment Orders</div><div class="card-sub">The "Pay Online" button on the Booking page opens the Razorpay checkout</div></div>
+  </div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Date</th><th>Order ID</th><th>Receipt</th><th>Patient</th><th>Amount</th><th>Status</th><th>Payment ID</th></tr></thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td style="font-size:11px;color:var(--txt2);white-space:nowrap">{{ o.created_at|date:"d M Y H:i" }}</td>
+          <td><span class="mono" style="font-size:10px;color:var(--txt3)">{{ o.razorpay_order_id }}</span></td>
+          <td><a href="{% url 'booking_detail' o.booking.pk %}" style="color:var(--blue)">{{ o.booking.receipt_id }}</a></td>
+          <td><strong>{{ o.booking.patient.full_name }}</strong></td>
+          <td style="font-weight:700;color:var(--teal)">₹{{ o.amount }}</td>
+          <td>
+            {% if o.status == 'paid' %}<span class="badge b-green">✓ Paid</span>
+            {% elif o.status == 'created' %}<span class="badge b-yellow">⏳ Pending</span>
+            {% elif o.status == 'failed' %}<span class="badge" style="background:var(--red-l);color:var(--red)">✗ Failed</span>
+            {% elif o.status == 'refunded' %}<span class="badge b-blue">↩ Refunded</span>
+            {% else %}<span class="badge" style="background:var(--surface2);color:var(--txt2)">{{ o.status|title }}</span>{% endif %}
+          </td>
+          <td><span class="mono" style="font-size:10px;color:var(--txt3)">{{ o.razorpay_payment_id|default:"—" }}</span></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" style="text-align:center;padding:48px 20px">
+          <div style="font-size:32px;margin-bottom:10px">💳</div>
+          <div style="color:var(--txt2);font-size:13px;font-weight:600">No online payments yet</div>
+          <div style="color:var(--txt3);font-size:11px;margin-top:4px">Configure Razorpay keys — the "Pay Online" button will appear</div>
+          <a href="{% url 'lab_settings' %}" class="btn btn-primary btn-sm" style="margin-top:12px">Setup Razorpay →</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px;border-color:rgba(56,139,253,.2);background:var(--blue-l)">
+  <div style="padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div style="font-size:12px;color:var(--blue)">
+      <strong>Test Card:</strong>
+      <span class="mono" style="background:var(--bg2);padding:2px 8px;border-radius:4px;margin:0 4px">4111 1111 1111 1111</span>
+      Expiry: any future date — CVV: any 3 digits
+    </div>
+    <div style="font-size:12px;color:var(--blue)">
+      <strong>Test UPI:</strong>
+      <span class="mono" style="background:var(--bg2);padding:2px 8px;border-radius:4px;margin:0 4px">success@razorpay</span>
+    </div>
+  </div>
+</div>
+{% endblock %}

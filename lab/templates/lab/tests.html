@@ -1,0 +1,86 @@
+{% extends 'lab/base.html' %}
+{% block title %}Test Master — Indian Path-Lab{% endblock %}
+{% block page_title %}Test Master{% endblock %}
+{% block extra_head %}
+<style>
+@media(max-width:640px){
+  .tw table{min-width:400px;}
+}
+</style>
+{% endblock %}
+{% block topbar_actions %}
+{% if user_role == 'admin' %}<button class="btn btn-primary btn-sm" onclick="openModal('modal-add-test')">+ Add Test</button>{% endif %}
+<a href="{% url 'rate_list' %}" class="btn btn-secondary btn-sm">Rate List</a>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-hd" style="padding:8px 14px;">
+    <form method="get" id="search-form" style="display:flex;gap:6px;align-items:center;">
+      <input id="search-input" name="q" value="{{ q }}" placeholder="🔍 Search test name..." style="padding:5px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--txt);font-size:12px;outline:none;width:220px;">
+      {% if q %}<a href="{% url 'tests' %}" style="font-size:11px;color:var(--txt2);">✕ Clear</a>{% endif %}
+      {% if q %}<span style="font-size:11px;color:var(--txt3);">Results for: <strong style="color:var(--teal)">{{ q }}</strong></span>{% endif %}
+    </form>
+  </div>
+  {% for cat, tests in by_cat.items %}
+  <div style="border-bottom:1px solid var(--border)">
+    <div style="padding:8px 14px;background:rgba(0,184,169,.05);font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between">
+      <span>{{ cat }}</span><span style="color:var(--txt3)">{{ tests|length }} tests</span>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Test Name</th><th>Sample</th><th>Price</th><th>TAT</th><th>Params</th>{% if user_role == 'admin' %}<th>Action</th>{% endif %}</tr></thead>
+      <tbody>
+      {% for t in tests %}
+      <tr>
+        <td style="font-weight:500;color:var(--txt)">{{ t.name }}</td>
+        <td><span class="badge b-gray">{{ t.sample }}</span></td>
+        <td style="font-weight:700;color:var(--teal);font-family:var(--mono)">₹{{ t.price }}</td>
+        <td style="font-size:11px;color:var(--txt3)">{{ t.tat|default:"—" }}</td>
+        <td><a href="{% url 'test_params' t.pk %}" class="btn btn-secondary btn-xs">{{ t.parameters.count }} params</a></td>
+        {% if user_role == 'admin' %}
+        <td><form method="post" action="{% url 'test_delete' t.pk %}" style="display:inline" onsubmit="return confirm('Remove {{ t.name }}?')">{% csrf_token %}<button type="submit" class="btn btn-danger btn-xs">Remove</button></form></td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+  {% empty %}<div style="padding:28px;text-align:center;color:var(--txt3)">{% if q %}No tests found for "<strong style="color:var(--teal)">{{ q }}</strong>". <a href="{% url 'tests' %}" style="color:var(--teal)">Clear search</a>{% else %}No tests configured. Run: python manage.py seed_data{% endif %}</div>{% endfor %}
+</div>
+{% if user_role == 'admin' %}
+<div class="mover" id="modal-add-test">
+  <div class="mbox" style="width:440px">
+    <div class="mhd"><div class="mtitle">Add New Test</div><button class="mclose" onclick="closeModal('modal-add-test')">×</button></div>
+    <form method="post" action="{% url 'test_add' %}">{% csrf_token %}
+      <div class="mbody">
+        <div class="fg"><label class="fl">Test Name <span class="req">*</span></label><input class="fc" name="name" required></div>
+        <div class="frow"><div class="fg"><label class="fl">Category</label><select class="fc" name="category"><option>Haematology</option><option>Biochemistry</option><option>Serology</option><option>Clinical Pathology</option><option>Histopathology</option><option>Hormones</option></select></div><div class="fg"><label class="fl">Price (₹)</label><input class="fc" type="number" name="price" placeholder="0" min="0"></div></div>
+        <div class="frow"><div class="fg"><label class="fl">Sample Type</label><select class="fc" name="sample"><option>Blood (Plain)</option><option>Blood (EDTA)</option><option>Urine</option><option>Stool</option><option>Sputum</option><option>Semen</option><option>Tissue</option><option>Sodium Citrate</option><option>Heparin</option><option>Floride</option></select></div><div class="fg"><label class="fl">TAT</label><input class="fc" name="tat" placeholder="e.g. 2 Hours"></div></div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-test')">Cancel</button><button type="submit" class="btn btn-primary">Add Test</button></div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script>
+// Debounced search — submit after user stops typing for 400ms
+(function(){
+  var inp = document.getElementById('search-input');
+  var form = document.getElementById('search-form');
+  var timer;
+  if(!inp) return;
+  inp.addEventListener('input', function(){
+    clearTimeout(timer);
+    timer = setTimeout(function(){ form.submit(); }, 400);
+  });
+  // Also submit on Enter immediately
+  inp.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ clearTimeout(timer); form.submit(); }
+  });
+})();
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mover').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+</script>
+{% endblock %}

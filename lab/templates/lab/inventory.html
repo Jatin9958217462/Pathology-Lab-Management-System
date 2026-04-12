@@ -1,0 +1,96 @@
+{% extends 'lab/base.html' %}
+{% block title %}Inventory — IPL{% endblock %}
+{% block page_title %}Inventory{% endblock %}
+{% block topbar_actions %}
+<button class="btn btn-primary btn-sm" onclick="openModal('modal-add-item')">+ Add Item</button>
+{% endblock %}
+{% block content %}
+<div class="wbanner">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div><div class="wb-title">📦 Inventory</div><div class="wb-sub">Reagents, consumables, equipment stock management</div></div>
+    <div style="display:flex;gap:10px">
+      {% if low_stock %}<div style="text-align:center"><div style="font-family:var(--display);font-size:22px;font-weight:700;color:var(--yellow)">{{ low_stock|length }}</div><div style="font-size:10px;color:var(--txt3)">Low Stock</div></div>{% endif %}
+      {% if expired %}<div style="text-align:center"><div style="font-family:var(--display);font-size:22px;font-weight:700;color:var(--red)">{{ expired|length }}</div><div style="font-size:10px;color:var(--txt3)">Expired</div></div>{% endif %}
+    </div>
+  </div>
+</div>
+{% if low_stock %}
+<div style="background:var(--yellow-l);border:1px solid rgba(210,153,34,.2);border-radius:var(--r2);padding:10px 14px;margin-bottom:12px">
+  <strong style="color:var(--yellow)">⚠️ Low Stock Alert:</strong>
+  <span style="font-size:12px;color:var(--txt2)">{% for i in low_stock %}{{ i.name }} ({{ i.current_stock }} {{ i.unit }}){% if not forloop.last %}, {% endif %}{% endfor %}</span>
+</div>
+{% endif %}
+<div class="card">
+  <div class="tw"><table>
+    <thead><tr><th>Item</th><th>Category</th><th>Stock</th><th>Min Level</th><th>Expiry</th><th>Unit Cost</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td><strong>{{ item.name }}</strong>{% if item.vendor %}<br><span style="font-size:10px;color:var(--txt3)">{{ item.vendor }}</span>{% endif %}</td>
+        <td style="font-size:11px;color:var(--txt2)">{{ item.category|default:"—" }}</td>
+        <td style="font-weight:700;{% if item.is_low_stock %}color:var(--yellow){% else %}color:var(--teal){% endif %}">{{ item.current_stock }} {{ item.unit }}</td>
+        <td style="font-size:11px;color:var(--txt3)">{{ item.min_stock }} {{ item.unit }}</td>
+        <td style="font-size:11px">{% if item.expiry_date %}{% if item.is_expired %}<span style="color:var(--red);font-weight:600">{{ item.expiry_date|date:"d M Y" }} EXPIRED</span>{% else %}{{ item.expiry_date|date:"d M Y" }}{% endif %}{% else %}—{% endif %}</td>
+        <td style="font-size:11px;color:var(--txt2)">₹{{ item.unit_cost }}</td>
+        <td>{% if item.is_expired %}<span class="badge" style="background:var(--red-l);color:var(--red)">Expired</span>{% elif item.is_low_stock %}<span class="badge b-yellow">Low Stock</span>{% else %}<span class="badge b-green">OK</span>{% endif %}</td>
+        <td>
+          <button class="btn btn-secondary btn-xs" onclick="openRestock({{ item.pk }}, '{{ item.name }}', '{{ item.unit }}')">Restock</button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--txt3)">No inventory items. Add one →</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="mover" id="modal-add-item">
+  <div class="mbox">
+    <div class="mhd"><div class="mtitle">📦 Add Inventory Item</div><button class="mclose" onclick="closeModal('modal-add-item')">×</button></div>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="add">
+      <div class="mbody">
+        <div class="fg"><label class="fl">Item Name <span class="req">*</span></label><input class="fc" name="name" required placeholder="e.g. EDTA Tubes, CBC Reagent Kit"></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Category</label><input class="fc" name="category" placeholder="Reagent / Consumable / Equipment"></div>
+          <div class="fg"><label class="fl">Vendor</label><input class="fc" name="vendor" placeholder="Supplier name"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Current Stock</label><input class="fc" type="number" name="current_stock" value="0" min="0" step="0.01"></div>
+          <div class="fg"><label class="fl">Min Stock Level</label><input class="fc" type="number" name="min_stock" value="0" min="0" step="0.01"></div>
+        </div>
+        <div class="frow">
+          <div class="fg"><label class="fl">Unit</label><select class="fc" name="unit"><option value="units">Units</option><option value="ml">mL</option><option value="L">Litre</option><option value="g">Gram</option><option value="kg">Kg</option><option value="strips">Strips</option><option value="vials">Vials</option><option value="boxes">Boxes</option></select></div>
+          <div class="fg"><label class="fl">Unit Cost (₹)</label><input class="fc" type="number" name="unit_cost" value="0" min="0" step="0.01"></div>
+        </div>
+        <div class="fg"><label class="fl">Expiry Date</label><input class="fc" type="date" name="expiry_date"></div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-item')">Cancel</button><button type="submit" class="btn btn-primary">Add Item</button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Restock Modal -->
+<div class="mover" id="modal-restock">
+  <div class="mbox" style="width:360px">
+    <div class="mhd"><div class="mtitle" id="restock-title">Restock Item</div><button class="mclose" onclick="closeModal('modal-restock')">×</button></div>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="restock"><input type="hidden" name="item_pk" id="restock-pk">
+      <div class="mbody">
+        <div class="fg"><label class="fl">Quantity to Add</label><input class="fc" type="number" name="qty" id="restock-qty" min="0" step="0.01" placeholder="0" required></div>
+      </div>
+      <div class="mfoot"><button type="button" class="btn btn-secondary" onclick="closeModal('modal-restock')">Cancel</button><button type="submit" class="btn btn-success">+ Restock</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mover').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+function openRestock(pk, name, unit){
+  document.getElementById('restock-pk').value = pk;
+  document.getElementById('restock-title').textContent = 'Restock: ' + name + ' (' + unit + ')';
+  document.getElementById('restock-qty').value = '';
+  openModal('modal-restock');
+}
+</script>{% endblock %}
