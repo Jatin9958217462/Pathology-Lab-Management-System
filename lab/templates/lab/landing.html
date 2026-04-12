@@ -261,7 +261,7 @@ footer{background:var(--dark);border-top:1px solid var(--border);padding:40px 5%
 <footer>
   <div class="footer-inner">
     <div class="footer-top">
-      <div><span class="footer-brand-name">{{ lab.lab_name }}</span><p class="footer-desc">{{ lab.tagline|default:"ISO 9001:2015 Certified" }} — {{ lab.unit_text|default:"" }}</p></div>
+      <div><span class="footer-brand-name">{{ lab.lab_name }}</span><p class="footer-desc">Demo Pathology Lab Management System.</p></div>
       <div><div class="footer-title">Quick Links</div><div class="footer-links"><a href="#home">Home</a><a href="#about">About Us</a><a href="#services">Services</a><a href="#contact">Contact</a><a href="#feedback">Feedback</a><a href="{% url 'rate_list' %}">Test Rate List</a></div></div>
       <div><div class="footer-title">Contact</div><div class="footer-links"><a href="tel:{{ lab.phone }}">📞 {{ lab.phone }}</a><a href="mailto:{{ lab.email }}">✉️ {{ lab.email }}</a><span>📍 {{ lab.address|truncatechars:55 }}</span></div></div>
     </div>
